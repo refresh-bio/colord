@@ -1,3 +1,21 @@
+/*******************************************************************************
+ 
+ CoLoRd 
+ Copyright (C) 2021, M. Kokot, S. Deorowicz, and A. Gudys
+ https://github.com/refresh-bio/CoLoRd
+
+ This program is free software: you can redistribute it and/or modify it under 
+ the terms of the GNU General Public License as published by the Free Software 
+ Foundation; either version 3 of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with this 
+ program. If not, see https://www.gnu.org/licenses/.
+
+******************************************************************************/
 #include "defs.h"
 #include "arg_parse.h"
 #include "utils.h"
@@ -32,7 +50,7 @@ struct CDefaultQualQuinaryThr
 struct CDefaultQualNone
 {
     static const inline std::vector<uint32_t> Fwd = { };
-    static const inline std::vector<uint32_t> Rev = { 7 };
+    static const inline std::vector<uint32_t> Rev = { 0 };
 };
 
 struct CDefaultQualAvg
@@ -446,11 +464,54 @@ void set_compression_params(CLI::App* app, CInfo& info, const std::string& comma
         compParser->group("");
 
     //positionals    
-    compParser->add_option("input", comParams.inputFilePath, "file (fastq/fasta gzipped or not) to compress path")->required(true)->check(CLI::ExistingFile);
-    compParser->add_option("output", comParams.outputFilePath, "output file path")->required(true);
+    compParser->add_option("input", comParams.inputFilePath, "input FASTQ/FASTA path (gzipped or not)")->required(true)->check(CLI::ExistingFile);
+    compParser->add_option("output", comParams.outputFilePath, "archive path")->required(true);
 
-    //others
+    // options
     toHideIfNoHelp.push_back(compParser->add_option("-k,--kmer-len", comParams.kmerLen, "k-mer length (default: auto adjust)")->check(CLI::Range(15, 28))); //TODO: maybe max should be lower (27, 28?)
+    toHideIfNoHelp.push_back(compParser->add_option("-t,--threads", comParams.nThreads, "number of threads", true));
+  
+    addPriorityParam(*compParser, comParams.internal.priority);
+
+    comParams.internal.qual_mode = qualityComprModeToString(comParams.qualityComprMode);
+
+    std::set<std::string> q_p{ "org", "none", "2-fix", "4-fix", "5-fix", "avg", "2-avg", "4-avg", "5-avg" };
+    toHideIfNoHelp.push_back(compParser->add_set("-q,--qual", comParams.internal.qual_mode, q_p, "quality compression mode \n"
+        " * org - original, \n"
+        " * none - discard (Q1 for all bases), \n"
+        " * avg - average over entire file, \n"
+        " * 2-fix, 4-fix, 5-fix - 2/4/5 bins with fixed representatives, \n"
+        " * 2-avg, 4-avg, 5-avg - 2/4/5 bins with averages as representatives.",
+        true));
+
+    toHideIfNoHelp.push_back(compParser->add_option("-T,--qual-thresholds", comParams.qualityFwdThresholds,
+        "quality thresholds, \n"
+        " * single value for '2-fix' mode (default is" + vec_to_string(CDefaultQualBinThr::Fwd) + "), \n"
+        " * single value for '2-avg' mode (default is" + vec_to_string(CDefaultQualBinAvg::Fwd) + "), \n"
+        " * three values for '4-fix' mode (default is" + vec_to_string(CDefaultQualQuadThr::Fwd) + "), \n"
+        " * three values for '4-avg' mode (default is" + vec_to_string(CDefaultQualQuadAvg::Fwd) + "), \n"
+        " * four values for '5-fix' mode (default is" + vec_to_string(CDefaultQualQuinaryThr::Fwd) + "), \n"
+        " * four values for '5-avg' mode (default is" + vec_to_string(CDefaultQualQuinaryAvg::Fwd) + "), \n"
+        " * not allowed for 'avg', 'org' and 'none' modes", false));
+
+    toHideIfNoHelp.push_back(compParser->add_option("-D,--qual-values", comParams.qualityRevThresholds,
+        "\nquality values for decompression,\n"
+        " * single value for 'none' mode (default is" + vec_to_string(CDefaultQualNone::Rev) + "), \n"
+        " * two values for '2-fix' mode (default is" + vec_to_string(CDefaultQualBinThr::Rev) + "), \n"
+        " * four values for '4-fix' mode (default is" + vec_to_string(CDefaultQualQuadThr::Rev) + "), \n"
+        " * five values for '5-fix' mode (default is" + vec_to_string(CDefaultQualQuinaryThr::Rev) + "), \n"
+        " * not allowed for 'avg', 'org', '2-avg', '4-avg' and '5-avg' modes", false));
+
+    toHideIfNoHelp.push_back(compParser->add_option("-G,--reference-genome", comParams.refGenomePath, 
+        "optional reference genome path (multi-FASTA gzipped or not), enables reference-based mode which provides better compression ratios")->check(CLI::ExistingFile));
+    
+    toHideIfNoHelp.push_back(compParser->add_flag("-s,--store-reference", comParams.storeRefGenome, 
+        "stores the reference genome in the archive, use only with `-G` flag"));
+
+    toHideIfNoHelp.push_back(compParser->add_flag("-v,--verbose", comParams.verbose, "verbose"));
+
+
+    // pro options
     toHideIfNoHelp.push_back(compParser->add_option("-a,--anchor-len", comParams.anchorLen, "anchor len (default: auto adjust)"));
     toHideIfNoHelp.push_back(compParser->add_option("-L,--Lowest-count", comParams.minKmerCount, "minimal k-mer count", true));
     toHideIfNoHelp.push_back(compParser->add_option("-H,--Highest-count", comParams.maxKmerCount, "maximal k-mer count", true));
@@ -461,46 +522,15 @@ void set_compression_params(CLI::App* app, CInfo& info, const std::string& comma
     toHideIfNoHelp.push_back(compParser->add_option("--min-to-alt", comParams.minPartLenToConsiderAltRead, "minimum length of encoding part to consider using alternative read", true)->check(CLI::PositiveNumber));
     toHideIfNoHelp.push_back(compParser->add_option("--min-mmer-frac", comParams.minFractionOfMmersInEncode, "if A is set of m-mers in encode read R then read is refused from encoding if |A| < min-mmer-frac * len(R)", true)->check(CLI::NonNegativeNumber));
     toHideIfNoHelp.push_back(compParser->add_option("--min-mmer-force-enc", comParams.minFractionOfMmersInEncodeToAlwaysEncode, "if A is set of m-mers in encode read R then read is accepted to encoding always if |A| > min-mmer-force-enc * len(R)", true)->check(CLI::NonNegativeNumber));
-    toHideIfNoHelp.push_back(compParser->add_option("--max-matches-mult", comParams.maxMatchesMultiplier, "if the number of matches between encode read R and reference read is r, then read is refused from encodinf if r > max-matches-mult * len(R)", true)->check(CLI::NonNegativeNumber));
-    toHideIfNoHelp.push_back(compParser->add_option("-t,--threads", comParams.nThreads, "number of threads", true));
+    toHideIfNoHelp.push_back(compParser->add_option("--max-matches-mult", comParams.maxMatchesMultiplier, "if the number of matches between encode read R and reference read is r, then read is refused from encoding if r > max-matches-mult * len(R)", true)->check(CLI::NonNegativeNumber));
     toHideIfNoHelp.push_back(compParser->add_option("--fill-factor-filtered-kmers", comParams.fillFactorFilteredKmers, "fill factor of filtered k-mers hash table", true)->check(CLI::Range(0.1, 0.99)));
     toHideIfNoHelp.push_back(compParser->add_option("--fill-factor-kmers-to-reads", comParams.fillFactorKmersToReads, "fill factor of k-mers to reads hash table", true)->check(CLI::Range(0.1, 0.99)));
-    toHideIfNoHelp.push_back(compParser->add_option("-G,--reference-genome", comParams.refGenomePath, "optional reference genome path (multi fasta gzipped or not), if -s is used the genome is not needed during decompression")->check(CLI::ExistingFile));
-    toHideIfNoHelp.push_back(compParser->add_flag("-s,--store-reference", comParams.storeRefGenome, "use only with -G flat, if set the reference genome is not needed during decompression at the cost of little bigger compressed file"));
-
-    toHideIfNoHelp.push_back(compParser->add_flag("-v,--verbose", comParams.verbose, "verbose"));
-
-
-    addPriorityParam(*compParser, comParams.internal.priority);
-
-    comParams.internal.qual_mode = qualityComprModeToString(comParams.qualityComprMode);
-    
-    std::set<std::string> q_p{ "org", "none", "2-thr", "4-thr", "5-thr", "avg", "2-avg", "4-avg", "5-avg" };
-    toHideIfNoHelp.push_back(compParser->add_set("-q,--qual", comParams.internal.qual_mode, q_p, "quality compression mode", true));
-
-    toHideIfNoHelp.push_back(compParser->add_option("-T,--qual-thresholds", comParams.qualityFwdThresholds,
-                        "quality thresholds, \n"
-                        " * single value for '2-thr' mode (default is"+vec_to_string(CDefaultQualBinThr::Fwd)+"), \n"
-                        " * single value for '2-avg' mode (default is" + vec_to_string(CDefaultQualBinAvg::Fwd) + "), \n"
-                        " * three values for '4-thr' mode (default is"+vec_to_string(CDefaultQualQuadThr::Fwd)+"), \n"
-                        " * three values for '4-avg' mode (default is" + vec_to_string(CDefaultQualQuadAvg::Fwd) + "), \n"
-                        " * four values for '5-thr' mode (default is"+vec_to_string(CDefaultQualQuinaryThr::Fwd)+"), \n"
-                        " * four values for '5-avg' mode (default is" + vec_to_string(CDefaultQualQuinaryAvg::Fwd) + "), \n"
-                        " * not allowed for 'avg', 'org' and 'none' modes",  false));
-
-    toHideIfNoHelp.push_back(compParser->add_option("-D,--qual-values", comParams.qualityRevThresholds,
-                        "\nquality values for decompression,\n"
-                        " * single value for 'none' mode (default is" + vec_to_string(CDefaultQualNone::Rev) + "), \n"
-                        " * two values for '2-thr' mode (default is" + vec_to_string(CDefaultQualBinThr::Rev)+"), \n"
-                        " * four values for '4-thr' mode (default is" + vec_to_string(CDefaultQualQuadThr::Rev)+"), \n"
-                        " * five values for '5-thr' mode (default is" + vec_to_string(CDefaultQualQuinaryThr::Rev)+"), \n"
-                        " * not allowed for 'avg', 'org', '2-avg', '4-avg' and '5-avg' modes", false));
-
+  
+   
     toHideIfNoHelp.push_back(compParser->add_option("--min-anchors", comParams.minAnchors, "if number of anchors common to encode read and reference candidate is lower than minAnchors candidate is refused", true));
 
     comParams.internal.header_mode = headerComprModeToString(comParams.headerComprMode);
     
-
     std::set<std::string> h_p{ "org", "main", "none" };
     toHideIfNoHelp.push_back(compParser->add_set("-i,--identifier", comParams.internal.header_mode, h_p, "header compression mode", true));
 
@@ -528,17 +558,17 @@ void set_compression_params(CLI::App* app, CInfo& info, const std::string& comma
             comParams.qualityComprMode = QualityComprMode::Original;
             adjust_quality_mode_and_thresholds(comParams, CDefaultQualOrg{}, comParams.internal.qual_mode);
         }        
-        else if (comParams.internal.qual_mode == "2-thr")
+        else if (comParams.internal.qual_mode == "2-fix")
         {
             comParams.qualityComprMode = QualityComprMode::BinaryThreshold;
             adjust_quality_mode_and_thresholds(comParams, CDefaultQualBinThr{}, comParams.internal.qual_mode);
         }
-        else if (comParams.internal.qual_mode == "4-thr")
+        else if (comParams.internal.qual_mode == "4-fix")
         {
             comParams.qualityComprMode = QualityComprMode::QuadThreshold;
             adjust_quality_mode_and_thresholds(comParams, CDefaultQualQuadThr{}, comParams.internal.qual_mode);
         }
-        else if (comParams.internal.qual_mode == "5-thr")
+        else if (comParams.internal.qual_mode == "5-fix")
         {
             comParams.qualityComprMode = QualityComprMode::QuinaryThreshold;
             adjust_quality_mode_and_thresholds(comParams, CDefaultQualQuinaryThr{}, comParams.internal.qual_mode);
@@ -627,11 +657,11 @@ std::string qualityComprModeToString(QualityComprMode qualityComprMode)
     case QualityComprMode::Original:
         return "org";
     case QualityComprMode::BinaryThreshold:
-        return "2-thr";        
+        return "2-fix";        
     case QualityComprMode::QuadThreshold:
-        return "4-thr";        
+        return "4-fix";        
     case QualityComprMode::QuinaryThreshold:
-        return "5-thr";        
+        return "5-fix";        
     case QualityComprMode::Average:
         return "avg";        
     case QualityComprMode::BinaryAverage:
@@ -833,16 +863,17 @@ int parse_params(int argc, char** argv)
     });
 
     //positionals    
-    decompParser->add_option("input", decomParams.inputFilePath, "compressed file path")->required(true)->check(CLI::ExistingFile);
+    decompParser->add_option("input", decomParams.inputFilePath, "archive path")->required(true)->check(CLI::ExistingFile);
     decompParser->add_option("output", decomParams.outputFilePath, "output file path")->required(true);
 
-    decompParser->add_option("-G,--reference-genome", decomParams.refGenomePath, "reference genome path (multi fasta gzipped or not), if -s was not used during compresiong this parameter is required")->check(CLI::ExistingFile);
+    decompParser->add_option("-G,--reference-genome", decomParams.refGenomePath,
+        "optional reference genome path (multi-FASTA gzipped or not), required for reference-based archives with no reference genome embedded (`-G` compression without `-s` switch)")->check(CLI::ExistingFile);
 
     decompParser->add_flag("-v,--verbose", decomParams.verbose, "verbose");
 
     CInfoParams infoParams;
     CLI::App* infoParser = app.add_subcommand("info", "print archive informations");
-    infoParser->add_option("input", infoParams.inputFilePath, "compressed file path")->required(true)->check(CLI::ExistingFile);
+    infoParser->add_option("input", infoParams.inputFilePath, "archive path")->required(true)->check(CLI::ExistingFile);
 
     infoParser->callback([&infoParams] {
         runInfo(infoParams);

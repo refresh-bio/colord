@@ -1,0 +1,95 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  
+  linux-test:
+    name: Linux test
+    runs-on: ubuntu-latest
+    env: 
+      EXE: ./bin/colord
+      ONT: ./test/M.bovis.fastq
+      ONT_LOSSY: ./test/M.bovis.fastq.quan
+      HIFI: ./test/D.melanogaster.fastq
+      HIFI_LOSSY: ./test/D.melanogaster.fastq.quan
+      CLR: ./test/A.thaliana.fastq
+      CLR_LOSSY: ./test/A.thaliana.fastq.quan
+ 
+    steps:
+    - uses: actions/checkout@v2
+    - name: make
+      run: make
+    
+    - name: ONT default
+      run: |
+        $EXE compress-ont $ONT ont.default
+        $EXE decompress ont.default ont.default.fastq
+        cmp $ONT_LOSSY ont.default.fastq
+        
+    - name: HiFi default
+      run: |
+        $EXE compress-pbhifi $HIFI hifi.default
+        $EXE decompress hifi.default hifi.default.fastq
+        cmp $HIFI_LOSSY hifi.default.fastq
+     
+    - name: CLR default
+      run: |
+        $EXE compress-pbraw $CLR clr.default
+        $EXE decompress clr.default clr.default.fastq
+        cmp $CLR_LOSSY clr.default.fastq
+        
+    - name: ONT lossless
+      run: |
+        $EXE compress-ont --qual org $ONT ont.lossless
+        $EXE decompress ont.lossless ont.lossless.fastq
+        cmp $ONT ont.lossless.fastq
+        
+    - name: CLR lossless
+      run: |
+        $EXE compress-pbraw -q org $CLR clr.lossless
+        $EXE decompress clr.lossless clr.lossless.fastq
+        cmp $CLR clr.lossless.fastq
+        
+    - name: HiFi balanced
+      run: |
+        $EXE compress-pbhifi --priority balanced $HIFI hifi.balanced
+        $EXE decompress hifi.balanced hifi.balanced.fastq
+        cmp $HIFI_LOSSY hifi.balanced.fastq
+        
+    - name: CLR ratio
+      run: |
+        $EXE compress-pbraw --priority ratio $CLR clr.ratio
+        $EXE decompress clr.ratio clr.ratio.fastq
+        cmp $CLR_LOSSY clr.ratio.fastq
+        
+    - name: ONT reference based
+      run: |
+        $EXE compress-ont -G ./test/M.bovis-reference.fna -s $ONT ont.refbased
+        $EXE decompress ont.refbased ont.refbased.fastq
+        cmp $ONT_LOSSY ont.refbased.fastq
+    
+        
+    - name: Archives information
+      run: |
+        $EXE info ont.default
+        $EXE info hifi.default
+        $EXE info clr.default 
+        $EXE info ont.lossless 
+        $EXE info hifi.balanced
+        $EXE info clr.ratio         
+    
+  macos-build:
+    name: macOS test
+    runs-on: macOS-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: make
+      run: make
+

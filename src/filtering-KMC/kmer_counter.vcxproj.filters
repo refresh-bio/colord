@@ -63,8 +63,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="libs\zconf.h" />
-    <ClInclude Include="libs\zlib.h" />
     <ClInclude Include="bam_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -1,3 +1,21 @@
+/*******************************************************************************
+ 
+ CoLoRd 
+ Copyright (C) 2021, M. Kokot, S. Deorowicz, and A. Gudys
+ https://github.com/refresh-bio/CoLoRd
+
+ This program is free software: you can redistribute it and/or modify it under 
+ the terms of the GNU General Public License as published by the Free Software 
+ Foundation; either version 3 of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with this 
+ program. If not, see https://www.gnu.org/licenses/.
+
+******************************************************************************/
 #pragma once
 
 #include <cctype>
@@ -46,7 +64,7 @@ struct CCompressorParams
 	uint32_t minPartLenToConsiderAltRead = 48; // minimum length of encoding part to consider using alternative read
 	double minFractionOfMmersInEncode = 0.5; // if A is set of m-mers in encode read R then read is refused from encoding if |A| < minFractionOfMmersInEncode * len(R)
 	double minFractionOfMmersInEncodeToAlwaysEncode = 0.9; // if A is set of m-mers in encode read R then read is accepted to encoding always if |A| > minFractionOfMmersInEncodeToAlwaysEncode * len(R)
-	double maxMatchesMultiplier = 10; // if the number of matches between encode read R and reference read is r, then read is refused from encodinf if r > maxMatchesMultiplier * len(R)
+	double maxMatchesMultiplier = 10; // if the number of matches between encode read R and reference read is r, then read is refused from encoding if r > maxMatchesMultiplier * len(R)
 	uint32_t nThreads = std::max(std::thread::hardware_concurrency(), 1u);
 	QualityComprMode qualityComprMode = QualityComprMode::QuadThreshold;
 	//int qualityThreshold = 7;

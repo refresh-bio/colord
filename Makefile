@@ -58,7 +58,7 @@ $(SRC)/libs/md5/md5.o
 
 ifeq ($(UNAME_S),Darwin)
     LIBS = \
-	$(SRC)/libs/zlib/libz.mac.a \
+	$(SRC)/../common/libs/zlib/libz.mac.a \
 	$(SRC)/libs/mimalloc/libmimalloc.mac.a \
 	$(SRC)/libs/count_kmers/libfiltering_kmc.mac.a \
 	$(SRC)/libs/count_kmers/libbz2.1.0.5.dylib
@@ -66,7 +66,7 @@ ifeq ($(UNAME_S),Darwin)
 	LIB_FILTERING_KMC = $(SRC)/libs/count_kmers/libfiltering_kmc.mac.a
 else
 	LIBS = \
-	$(SRC)/libs/zlib/libz.a \
+	$(SRC)/../common/libs/zlib/libz.a \
 	$(SRC)/libs/mimalloc/libmimalloc.a \
 	$(SRC)/libs/count_kmers/libfiltering_kmc.a \
 	$(SRC)/libs/count_kmers/libbz2.a
@@ -80,10 +80,10 @@ $(BIN_DIR)/colord: $(OBJS) $(COBJS) $(LIB_FILTERING_KMC)
 	$(CC) $(CLINK) -o $@ $^ $(LIBS)
 
 $(OBJS): %.o: %.cpp
-	$(CC) $(CFLAGS)  -I $(SRC)/libs/zlib -I $(SRC)/libs/kmc_api -I $(SRC)/libs/edlib -I $(SRC)/libs/CLI11 -c $< -o $@
+	$(CC) $(CFLAGS)  -I $(SRC)/../common/libs/zlib -I $(SRC)/libs/kmc_api -I $(SRC)/libs/edlib -I $(SRC)/libs/CLI11 -c $< -o $@
 
 $(COBJS): %.o: %.c
-	$(CC) $(CFLAGS)  -I $(SRC)/libs/zlib -I $(SRC)/libs/kmc_api -I $(SRC)/libs/edlib -I $(SRC)/libs/CLI11 -c $< -o $@
+	$(CC) $(CFLAGS)  -I $(SRC)/../common/libs/zlib -I $(SRC)/libs/kmc_api -I $(SRC)/libs/edlib -I $(SRC)/libs/CLI11 -c $< -o $@
 
 
 KMC_MAIN_DIR = src/filtering-KMC
@@ -117,7 +117,7 @@ else
 endif
 
 $(KMC_OBJS): %.o: %.cpp
-	$(CC) $(CFLAGS_KMC) -c $< -o $@
+	$(CC) $(CFLAGS_KMC) -I $(SRC)/../common/libs/zlib -c $< -o $@
 
 
 
