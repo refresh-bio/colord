@@ -1,0 +1,269 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="libs">
+      <UniqueIdentifier>{190cee42-e211-4fc0-9629-bbc097a5bfdb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\kmc_api">
+      <UniqueIdentifier>{a31a0772-0dca-4843-8005-c65c4c14091d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\edlib">
+      <UniqueIdentifier>{24afba7a-296d-4e8b-b921-a77f17bea2bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\entropy_coder">
+      <UniqueIdentifier>{891b554c-28fa-41a4-8beb-7104b1ca361a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\entropy_coder">
+      <UniqueIdentifier>{729fdf5e-a438-4c8a-8c49-701e4e63d2e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\pooled_threads">
+      <UniqueIdentifier>{6d41264e-cbbe-4535-b71c-ee00ccad162c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\pooled_threads">
+      <UniqueIdentifier>{a33f1e4d-104e-4168-a6f2-7cba092d4a09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\md5">
+      <UniqueIdentifier>{13e7a6b7-2caf-409c-8619-d18be35be574}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="arg_parse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="in_reads.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="count_kmers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filter_kmers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\kmc_api\kmc_file.cpp">
+      <Filter>libs\kmc_api</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\kmc_api\kmer_api.cpp">
+      <Filter>libs\kmc_api</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\kmc_api\mmer.cpp">
+      <Filter>libs\kmc_api</Filter>
+    </ClCompile>
+    <ClCompile Include="reads_sim_graph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\edlib\edlib.cpp">
+      <Filter>libs\edlib</Filter>
+    </ClCompile>
+    <ClCompile Include="override-new-delete.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stats_collector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="decompression.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="encoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="archive.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dna_coder.cpp">
+      <Filter>Source Files\entropy_coder</Filter>
+    </ClCompile>
+    <ClCompile Include="quality_coder.cpp">
+      <Filter>Source Files\entropy_coder</Filter>
+    </ClCompile>
+    <ClCompile Include="basic_coder.cpp">
+      <Filter>Source Files\entropy_coder</Filter>
+    </ClCompile>
+    <ClCompile Include="pooled_threads.cpp">
+      <Filter>Source Files\pooled_threads</Filter>
+    </ClCompile>
+    <ClCompile Include="entr_header.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="id_coder.cpp">
+      <Filter>Source Files\entropy_coder</Filter>
+    </ClCompile>
+    <ClCompile Include="info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="quality_coder_impl.cpp">
+      <Filter>Source Files\entropy_coder</Filter>
+    </ClCompile>
+    <ClCompile Include="reference_genome.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\md5\md5.c">
+      <Filter>libs\md5</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="params.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="arg_parse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="decompression.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="in_reads.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="count_kmers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="kmer_filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\kmc_api\kmc_file.h">
+      <Filter>libs\kmc_api</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\kmc_api\kmer_api.h">
+      <Filter>libs\kmc_api</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\kmc_api\kmer_defs.h">
+      <Filter>libs\kmc_api</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\kmc_api\mmer.h">
+      <Filter>libs\kmc_api</Filter>
+    </ClInclude>
+    <ClInclude Include="reads_sim_graph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="encoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\edlib\edlib.h">
+      <Filter>libs\edlib</Filter>
+    </ClInclude>
+    <ClInclude Include="edit_script.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stats_collector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="murmur64_hash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="context_hm.h">
+      <Filter>Header Files\entropy_coder</Filter>
+    </ClInclude>
+    <ClInclude Include="rc.h">
+      <Filter>Header Files\entropy_coder</Filter>
+    </ClInclude>
+    <ClInclude Include="sub_rc.h">
+      <Filter>Header Files\entropy_coder</Filter>
+    </ClInclude>
+    <ClInclude Include="parallel_queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="queues_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="reference_reads.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="archive.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="entr_header.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="entr_qual.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="entr_read.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="basic_coder.h">
+      <Filter>Header Files\entropy_coder</Filter>
+    </ClInclude>
+    <ClInclude Include="dna_coder.h">
+      <Filter>Header Files\entropy_coder</Filter>
+    </ClInclude>
+    <ClInclude Include="quality_coder.h">
+      <Filter>Header Files\entropy_coder</Filter>
+    </ClInclude>
+    <ClInclude Include="pooled_threads.h">
+      <Filter>Header Files\pooled_threads</Filter>
+    </ClInclude>
+    <ClInclude Include="id_coder.h">
+      <Filter>Header Files\entropy_coder</Filter>
+    </ClInclude>
+    <ClInclude Include="ref_reads_accepter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="meta_switch.h">
+      <Filter>Header Files\entropy_coder</Filter>
+    </ClInclude>
+    <ClInclude Include="info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\libdivide\libdivide.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="hm_compact.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="reference_genome.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\md5\md5.h">
+      <Filter>libs\md5</Filter>
+    </ClInclude>
+    <ClInclude Include="md5_wrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="libs\zlib\libz-static.lib" />
+    <Library Include="libs\mimalloc\mimalloc-static.lib" />
+    <Library Include="libs\mimalloc\mimalloc-static-debug.lib" />
+  </ItemGroup>
+</Project>

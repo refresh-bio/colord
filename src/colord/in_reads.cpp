@@ -1,0 +1,212 @@
+#include "in_reads.h"
+#include "zlib.h"
+#include <iostream>
+
+
+using namespace std;
+
+read_t CInputReads::to_read_t(const std::string& str, bool& hasN)
+{
+	read_t res(str.size() + 1);
+	hasN = false;
+	for (size_t i = 0; i < str.length(); ++i)
+	{
+		int8_t code = SymbToBinMap[(uint8_t)str[i]];
+		if (code == -1)
+		{
+			std::cerr << "Only ACGTN symbols supported inside a read\n";
+			exit(1);
+		}
+		hasN |= code == 4;
+		
+		res[i] = code;
+	}
+	res[str.size()] = 255; //guard
+	return res;
+}
+
+void CInputReads::addReadHeader()
+{
+	total_symb_header += currentLine.size();
+	currentLine.erase(currentLine.begin()); //remove '>'
+	if (!is_fastq)
+	{		
+		current_header_bytes += currentLine.size();
+		headers.emplace_back(std::move(currentLine), qual_header_type::empty);
+		if (current_header_bytes >= headers_pack_size)
+		{
+			current_header_bytes = 0;
+			headers_queue.Push(std::move(headers));
+		}
+	}
+	else
+		last_read_header = std::move(currentLine);
+}
+
+void CInputReads::addRead()
+{
+	bool hasN;
+	last_read = to_read_t(currentLine, hasN);
+	total_bases += currentLine.length();
+	current_reads_bytes += last_read.size();
+
+	reads.emplace_back(hasN, last_read);
+
+	stats.LogRead(read_len(reads.back().second));
+	if (current_reads_bytes >= reads_pack_size)
+	{
+		current_reads_bytes = 0;
+		reads_queue.Push(std::move(reads));
+	}
+}
+
+void CInputReads::addQualHeader()
+{
+	qual_header_type type = qual_header_type::empty;
+	total_symb_header += currentLine.size();
+	currentLine.erase(currentLine.begin()); //remove '+'
+	if (currentLine.size() > 0)
+	{
+		if (currentLine != last_read_header)
+		{
+			std::cerr << "Error: quality header not empty but different than read header\n";
+			exit(1);
+		}
+		type = qual_header_type::eq_read_header;
+	}
+	current_header_bytes += last_read_header.size();
+
+	headers.emplace_back(std::move(last_read_header), type);
+
+	if (current_header_bytes >= headers_pack_size)
+	{
+		current_header_bytes = 0;
+		headers_queue.Push(std::move(headers));
+	}
+}
+
+void CInputReads::addQual()
+{
+	qual_t qual(currentLine.begin(), currentLine.end());
+
+//	quals.emplace_back(std::move(last_read), std::move(currentLine));
+	quals.emplace_back(std::move(last_read), std::move(qual));
+	if(current_reads_bytes == 0) //if reads was just added then qual should be also, because the number of records should be the same for quals and for reads	
+		quals_queue.Push(std::move(quals));
+}
+
+
+
+CInputReads::CInputReads(bool verbose, const std::string& path, CParallelQueue<read_pack_t>& reads_queue, CParallelQueue<qual_pack_t>& quals_queue, CParallelQueue<header_pack_t>& headers_queue) :
+	stats(verbose),
+	reads_queue(reads_queue),
+	quals_queue(quals_queue),
+	headers_queue(headers_queue)
+{
+	enum class WhereInRead { read_header, read, qual_header, qual };
+	auto gzfile = gzopen(path.c_str(), "rb");
+	if (!gzfile)
+	{
+		cerr << "Error: cannot open file: " << path << "\n";
+		exit(1);
+	}
+
+	const uint32_t buf_size = 1ul << 25;
+	std::vector<uint8_t> buff(buf_size);
+
+	//int readed = gzread(gzfile, buff.data(), buf_size);
+	uint64_t readed = gzfread(buff.data(), 1, buf_size, gzfile);
+	total_bytes += readed;
+	if (!readed)
+	{
+		int code;
+		auto errmsg = gzerror(gzfile, &code);
+		if (code < 0)
+		{
+			std::cerr << "zblib error: " << errmsg << "\n";
+			exit(1);
+		}
+		std::cerr << "Error: file " << path << " is empty\n";
+		exit(1);
+	}
+	if (buff[0] != '@' && buff[0] != '>')
+	{
+		std::cerr << "Error: unknown file format\n";
+		exit(1);
+	}
+
+	is_fastq = buff[0] == '@';
+	WhereInRead whereInRead = WhereInRead::read_header;
+	
+	uint32_t record_lines = is_fastq ? 4 : 2;
+		
+	while (readed)
+	{
+		uint32_t pos = 0;
+		while (pos < readed)
+		{			
+			if (buff[pos] == '\n' || buff[pos] == '\r') // EOL reached
+			{				
+				if (currentLine.empty()) //we are skipping windows EOL
+					++pos;
+				else
+				{
+					currentLine.shrink_to_fit();
+					switch (whereInRead)
+					{
+					case WhereInRead::read_header:
+						addReadHeader();												
+						break;
+					case WhereInRead::read:
+						addRead();
+						break;
+					case WhereInRead::qual_header:
+						addQualHeader();
+						break;
+					case WhereInRead::qual:
+						addQual();						
+						break;
+					default:
+						break;
+					}
+					whereInRead = (WhereInRead)(((int)whereInRead + 1) % record_lines);
+					currentLine.clear();
+					++pos;
+				}				
+			}
+			else
+				currentLine.push_back(buff[pos++]);
+		}
+		
+		//readed = gzread(gzfile, buff.data(), buf_size);
+		readed = gzfread(buff.data(), 1, buf_size, gzfile);
+		total_bytes += readed;
+	}
+
+	int code;
+	auto errmsg = gzerror(gzfile, &code);
+	if (code < 0)
+	{
+		std::cerr << "zblib error: " << errmsg << "\n";
+		exit(1);
+	}
+
+	if (!currentLine.empty())
+	{
+		std::cerr << "Error: something went wrong during input reading\n";
+		exit(1);
+	}
+	gzclose(gzfile);
+
+	
+	if (reads.size())
+		reads_queue.Push(std::move(reads));
+	if (quals.size())
+		quals_queue.Push(std::move(quals));
+	if (headers.size())
+		headers_queue.Push(std::move(headers));
+	
+	reads_queue.MarkCompleted();
+	quals_queue.MarkCompleted();
+	headers_queue.MarkCompleted();
+}
