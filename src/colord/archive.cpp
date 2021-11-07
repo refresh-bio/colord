@@ -52,10 +52,10 @@ bool CArchive::Open(string file_name)
 
 	f = fopen(file_name.c_str(), input_mode ? "rb" : "wb");
 
-	setvbuf(f, nullptr, _IOFBF, 64 << 20);
-
 	if (!f)
 		return false;
+
+	setvbuf(f, nullptr, _IOFBF, 64 << 20);
 
 	if (input_mode)
 		deserialize();
@@ -171,7 +171,7 @@ bool CArchive::serialize()
 {
 	size_t footer_size = 0;
 
-	// Zapisuje informacje o po³o¿eniu kawa³ków strumieni
+	// Zapisuje informacje o poï¿½oï¿½eniu kawaï¿½kï¿½w strumieni
 	footer_size += write(m_streams.size());
 
 	for (auto& stream : m_streams)
@@ -207,7 +207,7 @@ bool CArchive::deserialize()
 
 	my_fseek(f, -(long)(8 + footer_size), SEEK_END);
 
-	// Odczytuje informacje o po³o¿eniu kawa³ków strumieni
+	// Odczytuje informacje o poï¿½oï¿½eniu kawaï¿½kï¿½w strumieni
 	size_t n_streams;
 	read(n_streams);
 

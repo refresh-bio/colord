@@ -345,6 +345,7 @@ void runCompression(const CCompressorParams& params, CInfo& info)
 {
 	info.version_major = version_major;
 	info.version_minor = version_minor;
+	info.version_patch = version_patch;
 	Timer total_timer;
 	total_timer.Start();
 

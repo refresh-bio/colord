@@ -139,6 +139,7 @@ class CParallelQueue
 	std::vector<T> data;
 	bool full = false;
 	bool is_completed = false;
+	bool cancel = false;
 	uint32_t n_writers;
 	uint32_t start = 0;
 	uint32_t end = 0;
@@ -149,6 +150,21 @@ class CParallelQueue
 	CQueueMonitor *qm;
 	uint32_t q_id;
 
+
+	void push_impl(T&& elem)
+	{
+		bool was_empty = start == end;
+		data[end] = std::move(elem);
+		end = (end + 1ul) % data.size();
+
+		full = end == start;
+		if (was_empty)
+			//			cv_pop.notify_all();
+			cv_pop.notify_one();
+
+		if (qm)
+			qm->inc(q_id);
+	}
 public:	
 	CParallelQueue(uint32_t size, uint32_t n_writers = 1, CQueueMonitor* qm = nullptr, uint32_t q_id = 0) :
 		data(size),
@@ -158,22 +174,26 @@ public:
 	{
 	}
 
+	//returns false if pushing thread should stop
+	bool PushOrCancel(T&& elem)
+	{
+		std::unique_lock lck(mtx);
+
+		cv_push.wait(lck, [this] {return !full || cancel; });
+		if (cancel)
+			return false;
+
+		push_impl(std::move(elem));
+		return true;
+	}
+
 	void Push(T&& elem)
 	{
 		std::unique_lock lck(mtx);
 
 		cv_push.wait(lck, [this] {return !full; });
-		bool was_empty = start == end;
-		data[end] = std::move(elem);
-		end = (end + 1ul) % data.size();
 		
-		full = end == start;
-		if (was_empty)
-//			cv_pop.notify_all();
-			cv_pop.notify_one();
-
-		if (qm)
-			qm->inc(q_id);
+		push_impl(std::move(elem));
 	}
 
 	bool Pop(T& elem)
@@ -208,6 +228,13 @@ public:
 			is_completed = true;
 			cv_pop.notify_all();
 		}
+	}
+
+	void Cancel()
+	{
+		std::lock_guard lck(mtx);
+		cancel = true;
+		cv_push.notify_all();
 	}
 };
 

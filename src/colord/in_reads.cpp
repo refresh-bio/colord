@@ -17,9 +17,7 @@
 
 ******************************************************************************/
 #include "in_reads.h"
-#include "zlib.h"
 #include <iostream>
-
 
 using namespace std;
 
@@ -113,6 +111,119 @@ void CInputReads::addQual()
 		quals_queue.Push(std::move(quals));
 }
 
+void CInputReads::porcessFastaOrMultiFasta(std::vector<uint8_t>& buff, uint64_t readed, uint32_t buf_size, gzFile gzfile)
+{
+	enum class FastaReadState { Header, EOLsAfterHeader, Read, EOLsAfterOrInsideRead };
+	FastaReadState fastaReadState = FastaReadState::Header;
+	while (readed)
+	{
+		for(uint32_t pos = 0; pos < readed; ++pos)
+		{
+			auto symb = buff[pos];
+			bool is_eol = symb == '\n' || symb == '\r';
+			switch (fastaReadState)
+			{
+				case FastaReadState::Header:
+					if (is_eol)
+					{
+						currentLine.shrink_to_fit();
+						addReadHeader();
+						currentLine.clear();
+						fastaReadState = FastaReadState::EOLsAfterHeader;
+					}
+					else
+						currentLine.push_back(symb);
+					break;
+				case FastaReadState::EOLsAfterHeader:
+					if (!is_eol)
+					{
+						currentLine.push_back(symb);
+						fastaReadState = FastaReadState::Read;
+					}
+					break;
+				case FastaReadState::Read:
+					if (is_eol)
+					{
+						fastaReadState = FastaReadState::EOLsAfterOrInsideRead;
+					}
+					else
+						currentLine.push_back(symb);
+					break;
+				case FastaReadState::EOLsAfterOrInsideRead:
+					if (!is_eol)
+					{
+						if (symb == '>')
+						{
+							currentLine.shrink_to_fit();
+							addRead();
+							currentLine.clear();
+							fastaReadState = FastaReadState::Header;
+						}
+						else
+							fastaReadState = FastaReadState::Read;
+						currentLine.push_back(symb);
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		readed = gzfread(buff.data(), 1, buf_size, gzfile);
+		total_bytes += readed;
+	}
+	currentLine.shrink_to_fit();
+	addRead();
+	currentLine.clear();
+}
+
+void CInputReads::processFastq(std::vector<uint8_t>& buff, uint64_t readed, uint32_t buf_size, gzFile gzfile)
+{
+	enum class WhereInRead { read_header, read, qual_header, qual };
+	WhereInRead whereInRead = WhereInRead::read_header;
+
+	uint32_t record_lines = 4; //4 lines form fastq record
+
+	while (readed)
+	{
+		uint32_t pos = 0;
+		while (pos < readed)
+		{
+			if (buff[pos] == '\n' || buff[pos] == '\r') // EOL reached
+			{
+				if (currentLine.empty()) //we are skipping windows EOL
+					++pos;
+				else
+				{
+					currentLine.shrink_to_fit();
+					switch (whereInRead)
+					{
+					case WhereInRead::read_header:
+						addReadHeader();
+						break;
+					case WhereInRead::read:
+						addRead();
+						break;
+					case WhereInRead::qual_header:
+						addQualHeader();
+						break;
+					case WhereInRead::qual:
+						addQual();
+						break;
+					default:
+						break;
+					}
+					whereInRead = (WhereInRead)(((int)whereInRead + 1) % record_lines);
+					currentLine.clear();
+					++pos;
+				}
+			}
+			else
+				currentLine.push_back(buff[pos++]);
+		}
+		readed = gzfread(buff.data(), 1, buf_size, gzfile);
+		total_bytes += readed;
+	}
+}
 
 
 CInputReads::CInputReads(bool verbose, const std::string& path, CParallelQueue<read_pack_t>& reads_queue, CParallelQueue<qual_pack_t>& quals_queue, CParallelQueue<header_pack_t>& headers_queue) :
@@ -121,7 +232,6 @@ CInputReads::CInputReads(bool verbose, const std::string& path, CParallelQueue<r
 	quals_queue(quals_queue),
 	headers_queue(headers_queue)
 {
-	enum class WhereInRead { read_header, read, qual_header, qual };
 	auto gzfile = gzopen(path.c_str(), "rb");
 	if (!gzfile)
 	{
@@ -132,7 +242,6 @@ CInputReads::CInputReads(bool verbose, const std::string& path, CParallelQueue<r
 	const uint32_t buf_size = 1ul << 25;
 	std::vector<uint8_t> buff(buf_size);
 
-	//int readed = gzread(gzfile, buff.data(), buf_size);
 	uint64_t readed = gzfread(buff.data(), 1, buf_size, gzfile);
 	total_bytes += readed;
 	if (!readed)
@@ -152,54 +261,13 @@ CInputReads::CInputReads(bool verbose, const std::string& path, CParallelQueue<r
 		std::cerr << "Error: unknown file format\n";
 		exit(1);
 	}
-
 	is_fastq = buff[0] == '@';
-	WhereInRead whereInRead = WhereInRead::read_header;
-	
-	uint32_t record_lines = is_fastq ? 4 : 2;
-		
-	while (readed)
-	{
-		uint32_t pos = 0;
-		while (pos < readed)
-		{			
-			if (buff[pos] == '\n' || buff[pos] == '\r') // EOL reached
-			{				
-				if (currentLine.empty()) //we are skipping windows EOL
-					++pos;
-				else
-				{
-					currentLine.shrink_to_fit();
-					switch (whereInRead)
-					{
-					case WhereInRead::read_header:
-						addReadHeader();												
-						break;
-					case WhereInRead::read:
-						addRead();
-						break;
-					case WhereInRead::qual_header:
-						addQualHeader();
-						break;
-					case WhereInRead::qual:
-						addQual();						
-						break;
-					default:
-						break;
-					}
-					whereInRead = (WhereInRead)(((int)whereInRead + 1) % record_lines);
-					currentLine.clear();
-					++pos;
-				}				
-			}
-			else
-				currentLine.push_back(buff[pos++]);
-		}
-		
-		//readed = gzread(gzfile, buff.data(), buf_size);
-		readed = gzfread(buff.data(), 1, buf_size, gzfile);
-		total_bytes += readed;
-	}
+
+	//FASTA or multi-fasta
+	if(!is_fastq)
+		porcessFastaOrMultiFasta(buff, readed, buf_size, gzfile);
+	else
+		processFastq(buff, readed, buf_size, gzfile);
 
 	int code;
 	auto errmsg = gzerror(gzfile, &code);

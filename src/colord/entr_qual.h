@@ -149,7 +149,7 @@ class CEntrDecomprQuals
 	uint32_t read_pack_pos{};
 	decomp_qual_pack_t qual_pack;
 
-	bool nextCompressedQual(std::vector<uint8_t>& read, std::vector<uint8_t>& qual)
+	bool nextCompressedQual(std::vector<uint8_t>& read, std::vector<uint8_t>& qual, bool& cancel)
 	{
 		if (read_pack_pos == 0)
 			return false;
@@ -162,7 +162,8 @@ class CEntrDecomprQuals
 
 			if (!qual_pack.empty())
 			{
-				qual_decompr_queue.Push(std::move(qual_pack));
+				if (!qual_decompr_queue.PushOrCancel(std::move(qual_pack)))
+					cancel = true;
 				qual_pack.clear();
 			}
 
@@ -218,10 +219,11 @@ public:
 	{
 		std::vector<uint8_t> qual;
 		read_t read;
+		bool cancel = false;
 		bool hasNextRead = nextRead(read);
-		bool hasNextQual = nextCompressedQual(read, qual);
+		bool hasNextQual = nextCompressedQual(read, qual, cancel);
 
-		while (hasNextRead && hasNextQual)
+		while (!cancel && hasNextRead && hasNextQual)
 		{
 			qual_pack.emplace_back(qual.begin(), qual.end());
 //			for (auto c : qual)
@@ -234,14 +236,15 @@ public:
 			}*/
 
 			hasNextRead = nextRead(read);
-			hasNextQual = nextCompressedQual(read, qual);
+			hasNextQual = nextCompressedQual(read, qual, cancel);
 		}
 
 		if (qual_pack.size())
-			qual_decompr_queue.Push(std::move(qual_pack));
+			if (!qual_decompr_queue.PushOrCancel(std::move(qual_pack)))
+				cancel = true;
 
 
-		if (hasNextQual != hasNextRead)
+		if (!cancel && hasNextQual != hasNextRead)
 		{
 			std::cerr << "Error: cirtical, contact authors, file: " << __FILE__ << ", line: " << __LINE__ << "\n";
 			exit(1);

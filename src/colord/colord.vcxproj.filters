@@ -123,6 +123,9 @@
     <ClCompile Include="libs\md5\md5.c">
       <Filter>libs\md5</Filter>
     </ClCompile>
+    <ClCompile Include="decompression_common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="params.h">
@@ -255,6 +258,9 @@
       <Filter>libs\md5</Filter>
     </ClInclude>
     <ClInclude Include="md5_wrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="decompression_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

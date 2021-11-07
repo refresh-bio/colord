@@ -58,7 +58,7 @@ class CQualityCoder : public CBasicCoder
 
 	context_t ctx_mask;
 	context_t ctx_inc;
-
+	
 	ctx_vece_quality_binary_t m_quality_binary_rc;
 	ctx_vece_quality_quad_t m_quality_quad_rc;
 	ctx_vece_quality_quinary_t m_quality_quinary_rc;
@@ -131,6 +131,11 @@ class CQualityCoder : public CBasicCoder
 		if (qd >= 5)
 			return 7;
 		return 8;
+	}
+
+	context_t valid_sym(uint8_t x)
+	{
+		return (context_t)(x & 3);
 	}
 
 	void encode_avg(context_t ctx_base, double x);

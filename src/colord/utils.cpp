@@ -327,6 +327,7 @@ std::vector<uint8_t> CInfo::Serialize() const
 	std::vector<uint8_t> res;
 	StoreLittleEndian(res, version_major);
 	StoreLittleEndian(res, version_minor);
+	StoreLittleEndian(res, version_patch);
 
 	StoreLittleEndian(res, total_bytes);
 	StoreLittleEndian(res, total_bases);
@@ -347,6 +348,7 @@ void CInfo::Deserialize(const std::vector<uint8_t>& data)
 	
 	loadSingle(ptr, version_major);
 	loadSingle(ptr, version_minor);
+	loadSingle(ptr, version_patch);
 
 	loadSingle(ptr, total_bytes);
 	loadSingle(ptr, total_bases);

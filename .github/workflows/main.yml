@@ -1,19 +1,21 @@
-name: C/C++ CI
+name: GitHub Actions CI
 
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    paths-ignore:
+      - '**.md'
   workflow_dispatch:
 
 jobs:
+
   
-  linux-test:
-    name: Linux test
+  linux-remote:
+    name: Linux test (remote)
     runs-on: ubuntu-latest
     env: 
       EXE: ./bin/colord
+      API_EXE: ./bin/api_example
       ONT: ./test/M.bovis.fastq
       ONT_LOSSY: ./test/M.bovis.fastq.quan
       HIFI: ./test/D.melanogaster.fastq
@@ -24,7 +26,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: make
-      run: make
+      run: make -j2
     
     - name: ONT default
       run: |
@@ -82,14 +84,37 @@ jobs:
         $EXE info clr.default 
         $EXE info ont.lossless 
         $EXE info hifi.balanced
-        $EXE info clr.ratio         
+        $EXE info clr.ratio    
+
+    - name: ONT default (API)
+      run: |
+        $API_EXE ont.default > ont.default.api
+        cmp $ONT_LOSSY ont.default.api
+        
+    - name: HiFi balanced (API)
+      run: |
+        $API_EXE hifi.balanced > hifi.balanced.api
+        cmp $HIFI_LOSSY hifi.balanced.api
+        
+    - name: ONT reference-based (API)
+      run: |
+        $API_EXE ont.refbased > ont.refbased.api
+        cmp $ONT_LOSSY ont.refbased.api
+        
+    - name: CLR lossless (API)
+      run: |
+        $API_EXE clr.lossless > clr.lossless.api
+        cmp $CLR clr.lossless.api
     
-  macos-build:
-    name: macOS test
+    
+  macos-remote:
+    name: macOS build (remote)
     runs-on: macOS-latest
 
     steps:
     - uses: actions/checkout@v2
     - name: make
-      run: make
+      run: make -j2
 
+ 
+          

@@ -87,6 +87,8 @@ CKmerCounter::CKmerCounter(uint32_t k, uint32_t ci, uint32_t cs, uint32_t n_thre
 			std::istringstream(line) >> line >> line >> line >> line >> tot_kmers;
 		else if (auto pos = line.find("#Total_reads"); pos != std::string::npos)
 			std::istringstream(line) >> line >> n_reads;
+		else if (auto pos = line.find("#Total_sequences"); pos != std::string::npos) //fasta because of using -fm instead of -fa
+			std::istringstream(line) >> line >> n_reads;
 	}
 	in.close();
 }

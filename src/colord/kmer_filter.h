@@ -20,6 +20,7 @@
 #include "defs.h"
 #include <string>
 #include <iostream>
+#include <limits>
 
 //#include <unordered_map>
 #include "hs.h"

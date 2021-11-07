@@ -170,6 +170,7 @@
     <ClCompile Include="archive.cpp" />
     <ClCompile Include="arg_parse.cpp" />
     <ClCompile Include="basic_coder.cpp" />
+    <ClCompile Include="decompression_common.cpp" />
     <ClCompile Include="dna_coder.cpp" />
     <ClCompile Include="compression.cpp" />
     <ClCompile Include="count_kmers.cpp" />
@@ -200,6 +201,7 @@
     <ClInclude Include="archive.h" />
     <ClInclude Include="arg_parse.h" />
     <ClInclude Include="basic_coder.h" />
+    <ClInclude Include="decompression_common.h" />
     <ClInclude Include="dna_coder.h" />
     <ClInclude Include="compression.h" />
     <ClInclude Include="context_hm.h" />

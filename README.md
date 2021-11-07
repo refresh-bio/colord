@@ -1,23 +1,23 @@
 # CoLoRd - Compressing long reads
 
-[![GitHub downloads](https://img.shields.io/github/downloads/refresh-bio/CoLoRd/total.svg?style=flag&label=GitHub%20downloads)](https://github.com/refresh-bio/CoLoRd/releases)
+[![GitHub downloads](https://img.shields.io/github/downloads/refresh-bio/colord/total.svg?style=flag&label=GitHub%20downloads)](https://github.com/refresh-bio/colord/releases)
 [![Bioconda downloads](https://img.shields.io/conda/dn/bioconda/colord.svg?style=flag&label=Bioconda%20downloads)](https://anaconda.org/bioconda/colord)
-[![C/C++ CI](https://github.com/refresh-bio/CoLoRd-dev/workflows/C/C++%20CI/badge.svg)](https://github.com/refresh-bio/CoLoRd-dev/actions)
-[![License](https://anaconda.org/bioconda/colord/badges/license.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![GitHub Actions CI](../../actions/workflows/main.yml/badge.svg)](../../actions/workflows/main.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 A versatile compressor of third generation sequencing reads.
 
 ## Quick start
 
 ```bash
-git clone https://github.com/refresh-bio/CoLoRd
+git clone https://github.com/refresh-bio/colord
 cd colord && make
 cd bin
 
 INPUT=./../test
 
 # default compression presets (lossy quality, memory priority)
-./colord compress-ont ${INPUT}/M.bovis.fastq ont.default 			# Oxford Nanopore
+./colord compress-ont ${INPUT}/M.bovis.fastq ont.default 		# Oxford Nanopore
 ./colord compress-pbhifi ${INPUT}/D.melanogaster.fastq hifi.default	# PacBio HiFi 
 ./colord compress-pbraw ${INPUT}/A.thaliana.fastq clr.default 		# PacBio CLR/subreads
 
@@ -41,7 +41,7 @@ INPUT=./../test
 
 ## Installation and configuration
 
-CoLoRd comes with a set of [precompiled binaries](https://github.com/refresh-bio/CoLoRd/releases) for Windows, Linux, and OS X. They can be found under Releases tab. 
+CoLoRd comes with a set of [precompiled binaries](https://github.com/refresh-bio/colord/releases) for Windows, Linux, and OS X. They can be found under Releases tab. 
 The software is also available on [Bioconda](https://anaconda.org/bioconda/colord):
 ```
 conda install -c bioconda colord
@@ -55,7 +55,7 @@ CoLoRd can be also built from the sources distributed as:
 To install G++ under under macOS, one can use *Homebrew* package manager:
 ```
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-brew install gcc
+brew install gcc@10
 ```
 Before running CoLoRd on macOS, the current limit of file descriptors should be increased:
 ```
@@ -141,9 +141,55 @@ Options:
 
 `colord info <archive>`
 
+## API
+
+CoLoRd comes with a C++ API allowing straightforward access to the existing archive. Below one can find an example of using API in the code.
+
+```c++
+#include "colord_api.h"
+#include <iostream>
+
+int main(int argc, char** argv) {
+	try {
+		colord::DecompressionStream stream("archive.colord");	// load a CoLoRd archive
+		auto info = stream.GetInfo();				// get and print archive information
+		std::cerr << "Archive info:\n\n";			//
+		info.ToOstream(std::cerr);				//	
+
+     		// iterate over records in the archive
+		while (auto x = stream.NextRecord()) {
+			if (info.isFastq) {
+				std::cout << "@" << x.ReadHeader() << "\n";
+				std::cout << x.Read() << "\n";
+				std::cout << "+" << x.QualHeader() << "\n";
+				std::cout << x.Qual() << "\n";
+			} else {
+				std::cout << ">" << x.ReadHeader() << "\n";
+				std::cout << x.Read() << "\n";
+			}
+		}
+	}
+	catch (const std::exception& ex) {
+		std::cerr << "Error: " << ex.what() << "\n";
+		return -1;
+	}	
+	return 0;
+}
+```
+
+### Compiling own code utilizing colord API
+To use an API one needs to include ```colord_api.h``` header file and link against ```libcolord_api.a```. ```libcolord_api.a``` uses ```std::thread```s and zlib, so ```-lpthreads``` and ```-lz``` flags are needed for linking. For example, to compile and link the code above one could use the following command:
+```
+g++ -O3 $SRC_FILE -I$INCLUDE_DIR $LIB_DIR/libcolord_api.a -lz -lpthread -o example
+```
+where
+ * ```SRC_FILE``` is a path to a source code
+ * ```INCLUDE_DIR``` is a path of the directory where ```colord_api.h``` file is (when one compiles ```colord``` from sources there is ```include``` directory created at the same location where ```Makefile``` is)
+ * ```LIB_DIR``` is a path of the directory where ```libcolord_api.a``` file is (when one compiles ```colord``` from sources there is ```bin``` directory created at the same location where ```Makefile``` is, it contains (among others) ```libcolord_api.a```)
+
 
 ## Citing
-[paper](link)
+[Marek Kokot, Adam Gudyś, Heng Li, Sebastian Deorowicz (2021) CoLoRd: Compressing long reads. *bioRxiv* 2021.07.17.452767; doi: https://doi.org/10.1101/2021.07.17.452767](https://doi.org/10.1101/2021.07.17.452767)
 
 
 

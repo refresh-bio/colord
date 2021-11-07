@@ -69,7 +69,8 @@ void CEntrDecomprHeaders::Decompress()
 
 		id_coder.Finish();
 
-		header_decompr_queue.Push(std::move(pack));
+		if (!header_decompr_queue.PushOrCancel(std::move(pack)))
+			break;
 	}
 
 	/*if (pack.size())

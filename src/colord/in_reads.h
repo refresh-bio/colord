@@ -22,6 +22,7 @@
 #include "parallel_queue.h"
 #include "queues_data.h"
 #include "stats_collector.h"
+#include "zlib.h"
 #include <string>
 #include <vector>
 #include <cassert>
@@ -102,7 +103,10 @@ class CInputReads
 	void addReadHeader();
 	void addRead();
 	void addQualHeader();
-	void addQual();		
+	void addQual();
+
+	void porcessFastaOrMultiFasta(std::vector<uint8_t>& buff, uint64_t readed, uint32_t buf_size, gzFile gzfile);
+	void processFastq(std::vector<uint8_t>& buff, uint64_t readed, uint32_t buf_size, gzFile gzfile);
 public:
 	explicit CInputReads(bool verbose, const std::string& path, CParallelQueue<read_pack_t>& reads_queue, CParallelQueue<qual_pack_t>& quals_queue, CParallelQueue<header_pack_t>& headers_queue);
 	void GetStats(uint64_t& total_bytes, uint64_t& total_bases, uint64_t& total_symb_header)

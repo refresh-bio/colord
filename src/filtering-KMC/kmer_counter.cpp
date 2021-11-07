@@ -587,7 +587,7 @@ int run_filtering_kmc(const CFilteringParams& params)
 
 
 	if (params.is_fasta)
-		regOpt("-fa");
+		regOpt("-fm");
 
 	regOpt(params.inputPath);
 

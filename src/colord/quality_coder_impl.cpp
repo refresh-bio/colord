@@ -87,30 +87,25 @@ void CQualityCoder::encode_original(const read_t& read, const qual_t& quality, e
 		context_t ctx = context;
 		uint32_t shift = ctx_size_in_bits;
 
-		ctx += ((context_t)read[i]) << shift;
+		ctx += valid_sym(read[i]) << shift;
 		shift += 2;
 
-		if (i > 0)					ctx += ((context_t)read[i - 1]) << shift;
+		if (i > 0)					ctx += valid_sym(read[i - 1]) << shift;
 		shift += 2;
 
 		if (compression_level == 3)
 		{
-			if (i > 1)					ctx += ((context_t)read[i - 2]) << shift;
+			if (i > 1)					ctx += valid_sym(read[i - 2]) << shift;
 			shift += 2;
 		}
 		else
 		{
-			if (i > 1)					ctx += ((context_t)(read[i - 2] == read[i - 1])) << shift;
+			if (i > 1)					ctx += ((context_t)(valid_sym(read[i - 2]) == valid_sym(read[i - 1]))) << shift;
 			shift += 1;
 		}
 
-		if (i + 1u < read_size)		ctx += ((context_t)read[i + 1u]) << shift;
+		if (i + 1u < read_size)		ctx += valid_sym(read[i + 1u]) << shift;
 		shift += 2;
-
-		/*			if (i > 1)					ctx += ((context_t)(read[i - 2] == read[i-1])) << shift;
-					shift += 1;
-					if (i + 2u < read_size)		ctx += ((context_t)(read[i + 1u] == read[i + 2u])) << shift;
-					shift += 1;*/
 
 		if (compression_level > 1)
 		{
@@ -161,7 +156,7 @@ void CQualityCoder::encode_quinary_average(const read_t& read, const qual_t& qua
 		ctx_p = (context_t)avg;
 	}
 
-	context_t dna_ctx = ((context_t)read[0]);
+	context_t dna_ctx = valid_sym(read[0]);
 
 	for (uint32_t i = 0; i < read_size; ++i)
 	{
@@ -170,7 +165,7 @@ void CQualityCoder::encode_quinary_average(const read_t& read, const qual_t& qua
 
 		dna_ctx <<= 2;
 		if (i + 1 < read_size)
-			dna_ctx += (context_t)read[i + 1];
+			dna_ctx += valid_sym(read[i + 1]);
 		dna_ctx &= 0xff;
 
 		ctx += dna_ctx << shift;
@@ -222,7 +217,7 @@ void CQualityCoder::encode_quad_average(const read_t& read, const qual_t& qualit
 		ctx_p = (context_t)avg;
 	}
 
-	context_t dna_ctx = ((context_t)read[0]);
+	context_t dna_ctx = valid_sym(read[0]);
 
 	for (uint32_t i = 0; i < read_size; ++i)
 	{
@@ -231,7 +226,7 @@ void CQualityCoder::encode_quad_average(const read_t& read, const qual_t& qualit
 
 		dna_ctx <<= 2;
 		if (i + 1 < read_size)
-			dna_ctx += (context_t)read[i + 1];
+			dna_ctx += valid_sym(read[i + 1]);
 		dna_ctx &= 0xff;
 
 		ctx += dna_ctx << shift;
@@ -283,7 +278,7 @@ void CQualityCoder::encode_binary_average(const read_t& read, const qual_t& qual
 		ctx_p = (context_t)avg;
 	}
 
-	context_t dna_ctx = ((context_t)read[0]);
+	context_t dna_ctx = valid_sym(read[0]);
 
 	for (uint32_t i = 0; i < read_size; ++i)
 	{
@@ -292,7 +287,7 @@ void CQualityCoder::encode_binary_average(const read_t& read, const qual_t& qual
 
 		dna_ctx <<= 2;
 		if (i + 1 < read_size)
-			dna_ctx += (context_t)read[i + 1];
+			dna_ctx += valid_sym(read[i + 1]);
 		dna_ctx &= 0xff;
 
 		ctx += dna_ctx << shift;
@@ -327,18 +322,17 @@ void CQualityCoder::encode_quinary_threshold(const read_t& read, const qual_t& q
 		context_t ctx = context;
 		uint32_t shift = ctx_size_in_bits;
 
-		ctx += ((context_t)read[i]) << shift;
+		ctx += valid_sym(read[i]) << shift;
 		shift += 2;
 
-		if (i > 0)					ctx += ((context_t)read[i - 1]) << shift;
+		if (i > 0)					ctx += valid_sym(read[i - 1]) << shift;
 		shift += 2;
 
-		if (i > 1)					ctx += ((context_t)read[i - 2]) << shift;
+		if (i > 1)					ctx += valid_sym(read[i - 2]) << shift;
 		shift += 2;
 
-		if (i + 1u < read_size)		ctx += ((context_t)read[i + 1u]) << shift;
+		if (i + 1u < read_size)		ctx += valid_sym(read[i + 1u]) << shift;
 		shift += 2;
-		//			if (i > 2)					ctx += ((context_t)read[i - 3]) << 44;
 
 		if (compression_level > 1)
 		{
@@ -370,18 +364,17 @@ void CQualityCoder::encode_quad_threshold(const read_t& read, const qual_t& qual
 		context_t ctx = context;
 		uint32_t shift = ctx_size_in_bits;
 
-		ctx += ((context_t)read[i]) << shift;
+		ctx += valid_sym(read[i]) << shift;
 		shift += 2;
 
-		if (i > 0)					ctx += ((context_t)read[i - 1]) << shift;
+		if (i > 0)					ctx += valid_sym(read[i - 1]) << shift;
 		shift += 2;
 
-		if (i > 1)					ctx += ((context_t)read[i - 2]) << shift;
+		if (i > 1)					ctx += valid_sym(read[i - 2]) << shift;
 		shift += 2;
 
-		if (i + 1u < read_size)		ctx += ((context_t)read[i + 1u]) << shift;
+		if (i + 1u < read_size)		ctx += valid_sym(read[i + 1u]) << shift;
 		shift += 2;
-		//			if (i > 2)					ctx += ((context_t)read[i - 3]) << 44;
 
 		if (compression_level > 1)
 		{
@@ -413,16 +406,16 @@ void CQualityCoder::encode_binary_threshold(const read_t& read, const qual_t& qu
 		context_t ctx = context;
 		uint32_t shift = ctx_size_in_bits;
 
-		ctx += ((context_t)read[i]) << shift;
+		ctx += valid_sym(read[i]) << shift;
 		shift += 2;
 
-		if (i > 0)					ctx += ((context_t)read[i - 1]) << shift;
+		if (i > 0)					ctx += valid_sym(read[i - 1]) << shift;
 		shift += 2;
 
-		if (i > 1)					ctx += ((context_t)read[i - 2]) << shift;
+		if (i > 1)					ctx += valid_sym(read[i - 2]) << shift;
 		shift += 2;
 
-		if (i + 1u < read_size)		ctx += ((context_t)read[i + 1u]) << shift;
+		if (i + 1u < read_size)		ctx += valid_sym(read[i + 1u]) << shift;
 		shift += 2;
 
 		if (compression_level > 1)
@@ -471,24 +464,24 @@ void CQualityCoder::decode_original(read_t& read, qual_t& quality)
 		context_t ctx = context;
 		uint32_t shift = ctx_size_in_bits;
 
-		ctx += ((context_t)read[i]) << shift;
+		ctx += valid_sym(read[i]) << shift;
 		shift += 2;
 
-		if (i > 0)					ctx += ((context_t)read[i - 1]) << shift;
+		if (i > 0)					ctx += valid_sym(read[i - 1]) << shift;
 		shift += 2;
 
 		if (compression_level == 3)
 		{
-			if (i > 1)					ctx += ((context_t)read[i - 2]) << shift;
+			if (i > 1)					ctx += valid_sym(read[i - 2]) << shift;
 			shift += 2;
 		}
 		else
 		{
-			if (i > 1)					ctx += ((context_t)(read[i - 2] == read[i - 1])) << shift;
+			if (i > 1)					ctx += ((context_t)(valid_sym(read[i - 2]) == valid_sym(read[i - 1]))) << shift;
 			shift += 1;
 		}
 
-		if (i + 1u < read_size)		ctx += ((context_t)read[i + 1u]) << shift;
+		if (i + 1u < read_size)		ctx += valid_sym(read[i + 1u]) << shift;
 		shift += 2;
 
 		if (compression_level > 1)
@@ -530,7 +523,7 @@ void CQualityCoder::decode_quinary_average(read_t& read, qual_t& quality)
 	array<double, 5> avg_sum = { 0, 0, 0, 0, 0 };
 	array<double, 5> qual_sum = { 0, 0, 0, 0, 0 };
 
-	context_t dna_ctx = ((context_t)read[0]);
+	context_t dna_ctx = valid_sym(read[0]);
 
 	for (uint32_t i = 0; i < read_size; ++i)
 	{
@@ -539,7 +532,7 @@ void CQualityCoder::decode_quinary_average(read_t& read, qual_t& quality)
 
 		dna_ctx <<= 2;
 		if (i + 1 < read_size)
-			dna_ctx += (context_t)read[i + 1];
+			dna_ctx += valid_sym(read[i + 1]);
 		dna_ctx &= 0xff;
 
 		ctx += dna_ctx << shift;
@@ -586,7 +579,7 @@ void CQualityCoder::decode_quad_average(read_t& read, qual_t& quality)
 	array<double, 4> avg_sum = { 0, 0, 0, 0 };
 	array<double, 4> qual_sum = { 0, 0, 0, 0 };
 
-	context_t dna_ctx = ((context_t)read[0]);
+	context_t dna_ctx = valid_sym(read[0]);
 
 	for (uint32_t i = 0; i < read_size; ++i)
 	{
@@ -595,7 +588,7 @@ void CQualityCoder::decode_quad_average(read_t& read, qual_t& quality)
 
 		dna_ctx <<= 2;
 		if (i + 1 < read_size)
-			dna_ctx += (context_t)read[i + 1];
+			dna_ctx += valid_sym(read[i + 1]);
 		dna_ctx &= 0xff;
 
 		ctx += dna_ctx << shift;
@@ -642,7 +635,7 @@ void CQualityCoder::decode_binary_average(read_t& read, qual_t& quality)
 	array<double, 2> avg_sum = { 0, 0 };
 	array<double, 2> qual_sum = { 0, 0 };
 
-	context_t dna_ctx = ((context_t)read[0]);
+	context_t dna_ctx = valid_sym(read[0]);
 
 	for (uint32_t i = 0; i < read_size; ++i)
 	{
@@ -651,7 +644,7 @@ void CQualityCoder::decode_binary_average(read_t& read, qual_t& quality)
 
 		dna_ctx <<= 2;
 		if (i + 1 < read_size)
-			dna_ctx += (context_t)read[i + 1];
+			dna_ctx += valid_sym(read[i + 1]);
 		dna_ctx &= 0xff;
 
 		ctx += dna_ctx << shift;
@@ -690,16 +683,16 @@ void CQualityCoder::decode_quinary_threshold(read_t& read, qual_t& quality)
 		context_t ctx = context;
 		uint32_t shift = ctx_size_in_bits;
 
-		ctx += ((context_t)read[i]) << shift;
+		ctx += valid_sym(read[i]) << shift;
 		shift += 2;
 
-		if (i > 0)					ctx += ((context_t)read[i - 1]) << shift;
+		if (i > 0)					ctx += valid_sym(read[i - 1]) << shift;
 		shift += 2;
 
-		if (i > 1)					ctx += ((context_t)read[i - 2]) << shift;
+		if (i > 1)					ctx += valid_sym(read[i - 2]) << shift;
 		shift += 2;
 
-		if (i + 1u < read_size)		ctx += ((context_t)read[i + 1u]) << shift;
+		if (i + 1u < read_size)		ctx += valid_sym(read[i + 1u]) << shift;
 		shift += 2;
 
 		if (compression_level > 1)
@@ -732,16 +725,16 @@ void CQualityCoder::decode_quad_threshold(read_t& read, qual_t& quality)
 		context_t ctx = context;
 		uint32_t shift = ctx_size_in_bits;
 
-		ctx += ((context_t)read[i]) << shift;
+		ctx += valid_sym(read[i]) << shift;
 		shift += 2;
 
-		if (i > 0)					ctx += ((context_t)read[i - 1]) << shift;
+		if (i > 0)					ctx += valid_sym(read[i - 1]) << shift;
 		shift += 2;
 
-		if (i > 1)					ctx += ((context_t)read[i - 2]) << shift;
+		if (i > 1)					ctx += valid_sym(read[i - 2]) << shift;
 		shift += 2;
 
-		if (i + 1u < read_size)		ctx += ((context_t)read[i + 1u]) << shift;
+		if (i + 1u < read_size)		ctx += valid_sym(read[i + 1u]) << shift;
 		shift += 2;
 
 		if (compression_level > 1)
@@ -774,16 +767,16 @@ void CQualityCoder::decode_binary_threshold(read_t& read, qual_t& quality)
 		context_t ctx = context;
 		uint32_t shift = ctx_size_in_bits;
 
-		ctx += ((context_t)read[i]) << shift;
+		ctx += valid_sym(read[i]) << shift;
 		shift += 2;
 
-		if (i > 0)					ctx += ((context_t)read[i - 1]) << shift;
+		if (i > 0)					ctx += valid_sym(read[i - 1]) << shift;
 		shift += 2;
 
-		if (i > 1)					ctx += ((context_t)read[i - 2]) << shift;
+		if (i > 1)					ctx += valid_sym(read[i - 2]) << shift;
 		shift += 2;
 
-		if (i + 1u < read_size)		ctx += ((context_t)read[i + 1u]) << shift;
+		if (i + 1u < read_size)		ctx += valid_sym(read[i + 1u]) << shift;
 		shift += 2;
 
 		if (compression_level > 1)
@@ -856,3 +849,5 @@ double CQualityCoder::decode_avg(context_t ctx_base)
 }
 
 }
+
+// EOF

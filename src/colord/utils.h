@@ -602,6 +602,7 @@ class CPercentProgress
 	uint64_t cur_iter = 0;
 	uint32_t cur_percent = std::numeric_limits<uint32_t>::max();
 	bool finished = false;
+	bool hide = false;
 	void update()
 	{
 		if (finished)
@@ -609,20 +610,22 @@ class CPercentProgress
 		uint32_t new_percent = static_cast<uint32_t>(cur_iter * 100 / max_iter);
 		if (new_percent != cur_percent)
 		{
-			std::cerr << new_percent << "%\r";
+			if(!hide)
+				std::cerr << new_percent << "%\r";
 			cur_percent = new_percent;
 		}
 		if (new_percent == 100)
 		{
 			finished = true;
-			std::cerr << "\n";
+			if (!hide)
+				std::cerr << "\n";
 		}
 	}
 public:
 	/*
 	Max iter may be approximate, but one needs to call ForceFinish in such a case
 	*/
-	CPercentProgress(uint64_t max_iter):max_iter(max_iter)
+	CPercentProgress(uint64_t max_iter, bool hide = false):max_iter(max_iter), hide(hide)
 	{
 
 	}
@@ -676,6 +679,7 @@ struct CInfo
 {
 	uint32_t version_major;
 	uint32_t version_minor;
+	uint32_t version_patch;
 	uint64_t total_bytes;
 	uint64_t total_bases;
 	uint32_t total_reads;

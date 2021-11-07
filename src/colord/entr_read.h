@@ -99,13 +99,15 @@ class CEntropyDecomprReads
 	CRefReadsAccepter& ref_reads_accepter;
 
 	uint32_t n_ref_genome_pseudo_reads;
+	bool hide_progress;
 
-	void packToQueues(decomp_read_pack_t& pack)
+	bool packToQueues(decomp_read_pack_t& pack)
 	{		
 		for (uint32_t i = 1; i < read_decompr_queues.size(); ++i)
 		{
 			auto copy = pack;
-			read_decompr_queues[i]->Push(std::move(copy));
+			if (!read_decompr_queues[i]->PushOrCancel(std::move(copy)))
+				return false;
 		}
 
 		// Mask flags
@@ -114,7 +116,9 @@ class CEntropyDecomprReads
 				for (auto& c : r)
 					c &= entropy_coder::base_mask_flags;
 
-		read_decompr_queues[0]->Push(std::move(pack));
+		if (!read_decompr_queues[0]->PushOrCancel(std::move(pack)))
+			return false;
+		return true;
 	}
 public:
 	CEntropyDecomprReads(CArchive& archive, std::vector<CParallelQueue<decomp_read_pack_t>*>& read_decompr_queues, bool verbose, uint32_t maxCandidates,
@@ -122,7 +126,8 @@ public:
 		uint64_t output_stream_size,
 		uint32_t total_reads,
 		ReferenceReadsMode referenceReadsMode, CReferenceReads& ref_reads, CRefReadsAccepter& ref_reads_accepter,
-		uint32_t n_ref_genome_pseudo_reads) :
+		uint32_t n_ref_genome_pseudo_reads,
+		bool hide_progress = false) :
 		archive(archive),
 		s_dna(archive.GetStreamId("dna")),
 		read_decompr_queues(read_decompr_queues),
@@ -133,7 +138,8 @@ public:
 		total_reads(total_reads),
 		referenceReadsMode(referenceReadsMode),
 		ref_reads_accepter(ref_reads_accepter),
-		n_ref_genome_pseudo_reads(n_ref_genome_pseudo_reads)
+		n_ref_genome_pseudo_reads(n_ref_genome_pseudo_reads),
+		hide_progress(hide_progress)
 	{
 	}
 
@@ -152,7 +158,7 @@ public:
 		decomp_read_pack_t read_pack;
 
 		//CPercentProgress progress(output_stream_size);
-		CPercentProgress progress(total_reads);
+		CPercentProgress progress(total_reads, hide_progress);
 		while (true)
 		{
 			read_t read;
@@ -164,7 +170,8 @@ public:
 				read_pack.emplace_back(std::move(read));
 			}
 
-			packToQueues(read_pack);
+			if (!packToQueues(read_pack))
+				break;
 
 			if (!archive.GetPart(s_dna, v_input, meta))
 				break;

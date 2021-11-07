@@ -41,6 +41,7 @@ void runInfo(const CInfoParams& params)
 
 	std::cerr << "version major: " << info.version_major << "\n";
 	std::cerr << "version minor: " << info.version_minor << "\n";
+	std::cerr << "version patch: " << info.version_patch << "\n";
 
 	std::cerr << "total bytes: " << info.total_bytes << "\n";
 	std::cerr << "total bases: " << info.total_bases << "\n";

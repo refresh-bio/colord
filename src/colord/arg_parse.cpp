@@ -824,7 +824,7 @@ int parse_params(int argc, char** argv)
     info.full_command_line = commandLineToString(argc, argv);
     
 	CLI::App app{ std::string("CoLoRd: Compressing long reads\n") +
-        "version: " + std::to_string(version_major) + "." + std::to_string(version_minor)
+        "version: " + std::to_string(version_major) + "." + std::to_string(version_minor) + "." + std::to_string(version_patch)
     };
     
     CDecompressorParams decomParams;
