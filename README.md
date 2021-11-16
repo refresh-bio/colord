@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
 ### Compiling own code utilizing colord API
 To use an API one needs to include ```colord_api.h``` header file and link against ```libcolord_api.a```. ```libcolord_api.a``` uses ```std::thread```s and zlib, so ```-lpthreads``` and ```-lz``` flags are needed for linking. For example, to compile and link the code above one could use the following command:
 ```
-g++ -O3 $SRC_FILE -I$INCLUDE_DIR $LIB_DIR/libcolord_api.a -lz -lpthread -o example
+g++ -O3 $SRC_FILE -I$INCLUDE_DIR $LIB_DIR/libcolord_api.a -lz -lpthread -o example -no-pie
 ```
 where
  * ```SRC_FILE``` is a path to a source code
