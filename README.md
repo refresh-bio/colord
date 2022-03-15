@@ -123,6 +123,53 @@ Advanced options (default values may depend on the mode - please run `colord --h
 * `-g, --sparse-range` - sparse mode range. The propability of reference read acceptance is *1 / pow(id/range_reads, exponent)*, where range_reads is determined based on the number of symbols, which in turn is determined by the number of trusted unique *k*-mers (estimated genome length) multiplied by the value of this parameter,
 * `-x, --sparse-exponent` - sparse mode exponent.
 
+#### Hints
+While the number of CoLoRd parameters is large, in most cases the default values will work just fine.
+In terms of compression, there is always a trade off between compression ratio and resource requirements (mainly memory and compute time).
+If the default behavior of CoLoRd is insufficient, the first attempt should be the change of compression priority mode (```-p``` parameter). 
+The compression priority modes aggregate multiple other parameters influencing compression ratio.
+There are the following priority modes (ordered increasingly w.r.t. the compression efficiency and resource requirements): 
+
+ * ```memory``` 
+ * ```balanced``` 
+ * ```ratio``` 
+
+The ```memory``` priority mode is the default.
+
+Quality scores have a high impact on the compression. They are hard to compress due to their nature and, at the same time (as presented in the paper) their resolution can be safely reduced without affecting downstream analyses. For this reason, in each  priority mode, the quality scores are compressed lossy. If it is required to keep the original quality scores, one should use ```-q org```. Note, that there exist several other quality compression modes (see the paper).
+
+Here are compression results for a large set of human reads [NA12878](http://s3.amazonaws.com/nanopore-human-wgs/rel6/rel_6.fastq.gz) with a total size of 268,305,314,354 bytes.
+
+|                                            | Lossy           | Lossless        |
+| ------------------------------------------ | --------------- | --------------- |
+| Compressed in ```memory``` mode size [B]   | 42,120,596,486  | 105,807,350,384 |
+| Compressed in ```balanced``` mode size [B] | 39,833,878,505  | 103,367,993,362 |
+| Compressed in ```ratio``` mode size [B]    | 38,832,714,102  | 101,305,368,675 |
+| Time in ```memory``` mode [h:mm:ss]        | 1:12:42         | 1:26:02         |
+| Time in ```balanced``` mode [h:mm:ss]      | 1:33:18         | 2:11:21         |
+| Time in ```ratio``` mode [h:mm:ss]         | 3:18:46         | 4:57:09         |
+| Memory in ```memory``` mode [KB]           | 13,715,168      | 14,341,128      |
+| Memory in ```balanced``` mode [KB]         | 26,728,108      | 27,293,824      |
+| Memory in ```ratio``` mode [KB]            | 97,922,208      | 99,133,548      |
+
+
+If one wants to check how much CoLoRd can squeeze the input data regardless of the resource requirements, the ```ratio``` mode should be used.
+If more control over execution is in demand, the remaining parameters may be configured. 
+The simplest way to settle the direction without the need to understand the meaning of parameters is to display the defaults for a given compression priority mode with ```--help``` switch.
+For example, let's say you want to find out if you should increase or decrease the ```-f``` parameter to improve the compression ratio while compressing ONT data.
+You may run CoLoRd twice with the following parameters:
+```
+./colord compress-ont --help -p balanced
+./colord compress-ont --help -p ratio
+``` 
+You will notice the default for ```-f``` is higher for ```balanced``` mode, which means lowering it will increase the compression ratio. The same approach may be applied for other parameters (```-L```, ```-H```, ```-c```, ```-r```, ```--min-to-alt```, etc.).
+
+In the ```ratio``` priority mode all the input reads may serve as a reference to encode other reads. This will increase RAM usage, especially for large datasets. In the remaining modes, only part of the reads may serve as a reference. If needed ```-g``` and ```-x``` may be used.
+
+The values for ```-k``` and ```-a``` parameters are auto-adjusted based on the size of the data to be compressed. The general rule is, the larger the input size is, the values of these parameters should be higher.
+
+
+
 ### Decompression
 
 `colord decompress [options] <archive> <output>`
