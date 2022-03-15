@@ -453,7 +453,7 @@ void adjust_quality_mode_and_thresholds(CCompressorParams& params, const T& defa
 void addPriorityParam(CLI::App& app, std::string& str)
 {
     std::set<std::string> q_p{ "ratio", "balanced", "memory" };
-    str = "balanced"; //balanced is default
+    str = "memory"; //memory is default
     app.add_set("-p,--priority", str, q_p, "compression quality");
 }
 
