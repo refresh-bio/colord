@@ -236,7 +236,7 @@ where
 
 
 ## Citing
-[Marek Kokot, Adam Gudyś, Heng Li, Sebastian Deorowicz (2021) CoLoRd: Compressing long reads. *bioRxiv* 2021.07.17.452767; doi: https://doi.org/10.1101/2021.07.17.452767](https://doi.org/10.1101/2021.07.17.452767)
+[Kokot, M., Gudyś, A., Li, H. and Deorowicz, S. (2022) CoLoRd: Compressing long reads. *Nature Methods*, https://doi.org/10.1038/s41592-022-01432-3](https://doi.org/10.1038/s41592-022-01432-3)
 
 
 
