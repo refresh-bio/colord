@@ -1,0 +1,3 @@
+[submodule "src/colord/libs/mimalloc"]
+	path = src/colord/libs/mimalloc
+	url = https://github.com/microsoft/mimalloc

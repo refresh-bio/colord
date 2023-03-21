@@ -56,9 +56,10 @@ $(SRC)/reference_genome.o
 COBJS = \
 $(SRC)/libs/md5/md5.o
 
+MIMALLOC_OBJ=$(SRC)/libs/mimalloc/mimalloc.o
+
 ifeq ($(UNAME_S),Darwin)
 	LIB_ZLIB = $(SRC)/../common/libs/zlib/libz.mac.a
-	LIB_MIMALLOC = $(SRC)/libs/mimalloc/libmimalloc.mac.a
     LIBS = \
 	$(SRC)/../common/libs/zlib/libz.mac.a \
 	$(SRC)/libs/count_kmers/libfiltering_kmc.mac.a \
@@ -67,7 +68,6 @@ ifeq ($(UNAME_S),Darwin)
 	LIB_FILTERING_KMC = $(SRC)/libs/count_kmers/libfiltering_kmc.mac.a
 else
 	LIB_ZLIB = $(SRC)/../common/libs/zlib/libz.a
-	LIB_MIMALLOC = $(SRC)/libs/mimalloc/libmimalloc.a
 	LIBS = \
 	$(SRC)/../common/libs/zlib/libz.a \
 	$(SRC)/libs/count_kmers/libfiltering_kmc.a \
@@ -78,9 +78,13 @@ endif
 
 all: $(BIN_DIR)/colord $(BIN_DIR)/libcolord_api.a $(BIN_DIR)/api_example
 
-$(BIN_DIR)/colord: $(OBJS) $(COBJS) $(OBJS_COMMON) $(LIB_FILTERING_KMC)
+$(MIMALLOC_OBJ):
+	$(CXX) -DMI_MALLOC_OVERRIDE -O3 -DNDEBUG -fPIC -Wall -Wextra -Wno-unknown-pragmas -fvisibility=hidden -ftls-model=initial-exec -fno-builtin-malloc -c -I $(SRC)/libs/mimalloc/include $(SRC)/libs/mimalloc/src/static.c -o $(MIMALLOC_OBJ)
+
+
+$(BIN_DIR)/colord: $(MIMALLOC_OBJ) $(OBJS) $(COBJS) $(OBJS_COMMON) $(LIB_FILTERING_KMC)
 	-mkdir -p $(BIN_DIR)
-	$(CXX) $(CLINK) -o $@ $(LIB_MIMALLOC) $^ $(LIBS)
+	$(CXX) $(CLINK) -o $@ $^ $(LIBS)
 
 $(BIN_DIR)/libcolord_api.a: $(COBJS) $(OBJS_COMMON) $(SRC)/../API/colord_api.o
 	-mkdir -p $(BIN_DIR)

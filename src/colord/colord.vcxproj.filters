@@ -37,6 +37,9 @@
     <Filter Include="libs\md5">
       <UniqueIdentifier>{13e7a6b7-2caf-409c-8619-d18be35be574}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libs\mimalloc">
+      <UniqueIdentifier>{eb946dda-8c53-4c13-a57e-86f122dfc350}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -125,6 +128,9 @@
     </ClCompile>
     <ClCompile Include="decompression_common.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\mimalloc\src\static.c">
+      <Filter>libs\mimalloc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -265,8 +271,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="libs\mimalloc\mimalloc-static.lib" />
-    <Library Include="libs\mimalloc\mimalloc-static-debug.lib" />
     <Library Include="..\common\libs\zlib\zlibstat.lib" />
   </ItemGroup>
 </Project>
