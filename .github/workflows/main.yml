@@ -112,7 +112,7 @@ jobs:
     
   macos-remote:
     name: macOS build (remote)
-    runs-on: macOS-latest
+    runs-on: macOS-11
 
     steps:
     - name: Checkout repository and submodules
