@@ -15,7 +15,10 @@ jobs:
     env: 
       EXE: ./bin/colord
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
            
     - name: make (g++ 9)
       run: |

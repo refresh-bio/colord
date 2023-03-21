@@ -10,7 +10,7 @@ A versatile compressor of third generation sequencing reads.
 ## Quick start
 
 ```bash
-git clone https://github.com/refresh-bio/colord
+git clone --recurse-submodules https://github.com/refresh-bio/colord
 cd colord && make
 cd bin
 
