@@ -227,7 +227,7 @@ int main(int argc, char** argv) {
 ### Compiling own code utilizing colord API
 To use an API one needs to include ```colord_api.h``` header file and link against ```libcolord_api.a```. ```libcolord_api.a``` uses ```std::thread```s and zlib, so ```-lpthreads``` and ```-lz``` flags are needed for linking. For example, to compile and link the code above one could use the following command:
 ```
-g++ -O3 $SRC_FILE -I$INCLUDE_DIR $LIB_DIR/libcolord_api.a -lz -lpthread -o example
+g++ -O3 $SRC_FILE -I$INCLUDE_DIR $LIB_DIR/libcolord_api.a -lz -lpthread -o example -no-pie
 ```
 where
  * ```SRC_FILE``` is a path to a source code
@@ -236,7 +236,7 @@ where
 
 
 ## Citing
-[Marek Kokot, Adam Gudyś, Heng Li, Sebastian Deorowicz (2021) CoLoRd: Compressing long reads. *bioRxiv* 2021.07.17.452767; doi: https://doi.org/10.1101/2021.07.17.452767](https://doi.org/10.1101/2021.07.17.452767)
+[Kokot, M., Gudyś, A., Li, H. and Deorowicz, S. (2022) CoLoRd: Compressing long reads. *Nature Methods*, https://doi.org/10.1038/s41592-022-01432-3](https://doi.org/10.1038/s41592-022-01432-3)
 
 
 
