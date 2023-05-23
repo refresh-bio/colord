@@ -71,6 +71,7 @@ bool isFastq(const std::string& path)
 		std::cerr << "Error: file " << path << " is empty\n";
 		exit(1);
 	}
+	gzclose(f);
 	return c == '@';
 }
 
