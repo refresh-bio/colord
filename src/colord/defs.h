@@ -22,7 +22,7 @@
 
 //#define ENABLE_QUEUE_LOGING
 constexpr uint32_t version_major = 1;
-constexpr uint32_t version_minor = 1;
+constexpr uint32_t version_minor = 2;
 constexpr uint32_t version_patch = 0;
 
 //#define ALLOW_ZERO_COMPRESSION_MODE
