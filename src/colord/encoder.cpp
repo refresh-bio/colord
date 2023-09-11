@@ -204,49 +204,6 @@ public:
 			mmers.insert_fast(x);
 	}
 
-	//for HiFi
-	explicit CMmersHashMapLP(const read_t& read, uint32_t m, hash_set_type& include, CBloomFilter& bloom_mmers) :
-//		mmers(~0ull, static_cast<size_t>(include.size() / 0.4), 0.4, std::equal_to<uint64_t>{}, MurMur64Hash{})
-		mmers(~0ull, 16, 0.8, std::equal_to<uint64_t>{}, MurMur64Hash{})
-	{
-
-		if (read_len(read) < m)
-			return;
-
-		anchor_type mask = (1ull << (2 * m)) - 1;
-
-
-		anchor_type mmer{}, rev{};
-		uint32_t pos = 0;
-		for (; pos < m - 1; ++pos)
-		{
-			assert(read[pos] < 4); //only ACGT
-			mmer <<= 2;
-			mmer += read[pos];
-
-			rev >>= 2;
-			rev += ((uint64_t)(3 - read[pos])) << (2 * (m - 1));
-		}
-
-
-		for (; pos < read_len(read); ++pos)
-		{
-			assert(read[pos] < 4); //only ACGT
-			mmer <<= 2;
-			mmer += read[pos];
-			mmer &= mask;
-
-			rev >>= 2;
-			rev += ((uint64_t)(3 - read[pos])) << (2 * (m - 1));
-			auto can = mmer < rev ? mmer : rev;
-
-			if (include.check(can))
-			{
-				mmers.insert_fast(std::make_pair(mmer, pos - m + 1));
-			}
-		}
-
-	}
 	void GetIntersection(CMmersHashMapLP& inParam,
 		std::vector<std::pair<anchor_type, std::vector<uint32_t>>>& outThis,
 		std::vector<std::pair<anchor_type, std::vector<uint32_t>>>& outParam
@@ -311,7 +268,7 @@ public:
 					done.insert_fast(key);
 				if (auto it = bigger_input.find(key); it != bigger_input.local_end())
 				{
-					auto smaller_it = smaller_input.find(key); //in case of non unique values local_begin may produce erroneous results 
+					auto smaller_it = smaller_input.find(key); //in case of non unique values local_begin may produce erroneous results
 
 					smaller_output.emplace_back(key, std::vector<uint32_t>{});
 					for (; smaller_it != smaller_input.local_end(); ++smaller_it)
@@ -326,7 +283,214 @@ public:
 	}
 };
 
+//the idea of this class is to keep m-mers in hash table where values are positions
+//but in some cases there is a lot of duplicated m-mers which are all stored as separate entries in HT
+//for this reason in this class there is a limit of a numebr of stored duplicates
+//if there is more duplicates in the input data the remaining positions are stored in a separate data structure (just a vector)
+//this is possible with insert_up_to_n_duplicates method added to hash table which has some limitation (for example there may be no HT restruct to keep the results correct)
+class CMmersHashMapDuplicateOptimizedLP
+{
+	using hash_map_type = hash_map_lp<uint64_t, uint64_t, std::equal_to<uint64_t>, MurMur64Hash>;
+	using hash_set_type = hash_set_lp<uint64_t, std::equal_to<uint64_t>, MurMur64Hash>;
+	hash_map_type mmers;
 
+	const size_t insert_up_to = 20;
+
+	std::vector<std::vector<uint64_t>> vec_for_highly_duplicated_elems;
+
+	void insert_elem(anchor_type key, uint64_t val) {
+		uint64_t x = vec_for_highly_duplicated_elems.size();
+		auto y = mmers.insert_up_to_n_duplicates(key, val, x, insert_up_to);
+
+		if (y == insert_up_to) {
+			if (x == vec_for_highly_duplicated_elems.size())
+				vec_for_highly_duplicated_elems.emplace_back();
+			vec_for_highly_duplicated_elems[x].push_back(val);
+		}
+	}
+
+public:
+	uint32_t GetNMmers() {
+		return static_cast<uint32_t>(mmers.size_unique());
+	}
+
+	size_t Size() {
+		size_t x = 0;
+		for (auto p : vec_for_highly_duplicated_elems)
+			x += p.size();
+
+		// - vec_for_highly_duplicated_elems.size() because this is the numebr of entries in HT that are just to store indexes of vectors
+		return mmers.size() - vec_for_highly_duplicated_elems.size() + x;
+	}
+
+	explicit CMmersHashMapDuplicateOptimizedLP(const read_t& read, uint32_t m) :
+		//+ 1 in initial size is crucial because we use insert_up_to_n_duplicates which does not allow restruct of HT
+		mmers(~0ull, static_cast<size_t>((read_len(read) - m + 1) / 0.4) + 1, 0.4, std::equal_to<uint64_t>{}, MurMur64Hash{})
+	{
+		if (read_len(read) < m)
+			return;
+
+		anchor_type mask = (1ull << (2 * m)) - 1;
+
+		anchor_type mmer{};
+		uint32_t pos = 0;
+		for (; pos < m - 1; ++pos)
+		{
+			assert(read[pos] < 4); //only ACGT
+			mmer <<= 2;
+			mmer += read[pos];
+		}
+
+		for (; pos < read_len(read); ++pos)
+		{
+			assert(read[pos] < 4); //only ACGT
+			mmer <<= 2;
+			mmer += read[pos];
+			mmer &= mask;
+			insert_elem(mmer, pos - m + 1);
+		}
+	}
+
+	explicit CMmersHashMapDuplicateOptimizedLP(const read_t& read, uint32_t m, CMmersHashMapDuplicateOptimizedLP& allowOnly, CBloomFilter& bloom_mmers) :
+		mmers(~0ull, 16, 0.8, std::equal_to<uint64_t>{}, MurMur64Hash{})
+	{
+		hash_map_type& include = allowOnly.mmers;
+		if (read_len(read) < m)
+			return;
+
+		anchor_type mask = (1ull << (2 * m)) - 1;
+
+		anchor_type mmer{};
+		uint32_t pos = 0;
+		for (; pos < m - 1; ++pos)
+		{
+			assert(read[pos] < 4); //only ACGT
+			mmer <<= 2;
+			mmer += read[pos];
+		}
+
+		std::vector<std::pair<uint64_t, uint64_t>> v_mmers;
+		v_mmers.reserve(read_len(read) - m + 1);
+
+		for (; pos < read_len(read); ++pos)
+		{
+			assert(read[pos] < 4); //only ACGT
+			mmer <<= 2;
+			mmer += read[pos];
+			mmer &= mask;
+
+			if (bloom_mmers.test(mmer))
+				if (include.check(mmer))
+					v_mmers.emplace_back(mmer, pos - m + 1);
+		}
+		//+ 1 in initial size is crucial because we use insert_up_to_n_duplicates which does not allow restruct of HT
+		mmers = hash_map_type(~0ull, static_cast<uint64_t>(v_mmers.size() / 0.4) + 1, 0.4, std::equal_to<uint64_t>{}, MurMur64Hash{});
+		for (auto& x : v_mmers)
+			insert_elem(x.first, x.second);
+	}
+
+	void GetIntersection(CMmersHashMapDuplicateOptimizedLP& inParam,
+		std::vector<std::pair<anchor_type, std::vector<uint32_t>>>& outThis,
+		std::vector<std::pair<anchor_type, std::vector<uint32_t>>>& outParam
+	)
+	{
+		outThis.clear();
+		outParam.clear();
+		hash_map_type& in_mmers_this = this->mmers;
+		hash_map_type& in_mmers_param = inParam.mmers;
+
+		std::vector<std::vector<uint64_t>>& vec_for_highly_duplicated_elems_this = this->vec_for_highly_duplicated_elems;
+		std::vector<std::vector<uint64_t>>& vec_for_highly_duplicated_elems_param = inParam.vec_for_highly_duplicated_elems;
+
+		hash_map_type* _smaller_input = &in_mmers_this;
+		hash_map_type* _bigger_input = &in_mmers_param;
+
+		std::vector<std::vector<uint64_t>>* _vec_for_highly_duplicated_elems_smaller = &vec_for_highly_duplicated_elems_this;
+		std::vector<std::vector<uint64_t>>* _vec_for_highly_duplicated_elems_bigger = &vec_for_highly_duplicated_elems_param;
+
+		std::vector<std::pair<anchor_type, std::vector<uint32_t>>>* _smaller_output = &outThis;
+		std::vector<std::pair<anchor_type, std::vector<uint32_t>>>* _bigger_output = &outParam;
+		if (in_mmers_this.size() > in_mmers_param.size())
+		{
+			std::swap(_smaller_input, _bigger_input);
+			std::swap(_smaller_output, _bigger_output);
+			std::swap(_vec_for_highly_duplicated_elems_smaller, _vec_for_highly_duplicated_elems_bigger);
+		}
+		hash_map_type& smaller_input = *_smaller_input;
+		hash_map_type& bigger_input = *_bigger_input;
+		std::vector<std::vector<uint64_t>>& vec_for_highly_duplicated_elems_smaller = *_vec_for_highly_duplicated_elems_smaller;
+		std::vector<std::vector<uint64_t>>& vec_for_highly_duplicated_elems_bigger = *_vec_for_highly_duplicated_elems_bigger;
+		std::vector<std::pair<uint64_t, std::vector<uint32_t>>>& smaller_output = *_smaller_output;
+		std::vector<std::pair<uint64_t, std::vector<uint32_t>>>& bigger_output = *_bigger_output;
+
+		smaller_output.reserve(smaller_input.size());
+		bigger_output.reserve(smaller_input.size());
+
+		if (smaller_input.size() == smaller_input.size_unique()) //only unique values, it may be done simpler
+		{
+			for (auto outerIt = smaller_input.begin(); outerIt != smaller_input.end(); ++outerIt)
+			{
+				auto key = outerIt->first;
+				if (auto it = bigger_input.find(key); it != bigger_input.local_end())
+				{
+					//auto smaller_it = smaller_input.find(key); //must be successfull, but it seems to be unnecessary, maybe there is a better way
+/*					auto smaller_it = smaller_input.local_begin(outerIt); //it is guranted that local_begin work well in a case of unique records
+					smaller_output.emplace_back(key, std::vector<uint32_t>{});
+					for (; smaller_it != smaller_input.local_end(); ++smaller_it)
+						smaller_output.back().second.push_back(static_cast<uint32_t>(smaller_it->second));*/
+					auto smaller_it = smaller_input.local_value_begin(outerIt); //it is guranted that local_begin work well in a case of unique records
+					smaller_output.emplace_back(key, std::vector<uint32_t>(smaller_it, smaller_input.local_value_end()));
+
+					bigger_output.emplace_back(key, std::vector<uint32_t>{});
+					for (size_t i = 0; it != bigger_input.local_end(); ++it, ++i) {
+						assert(i <= insert_up_to - 1);
+						if (i == insert_up_to - 1)
+							for (auto x : vec_for_highly_duplicated_elems_bigger[it->second])
+								bigger_output.back().second.push_back(static_cast<uint32_t>(x));
+						else
+							bigger_output.back().second.push_back(static_cast<uint32_t>(it->second));
+					}
+				}
+			}
+		}
+		else
+		{
+			hash_set_type done(~0ull, static_cast<size_t>(smaller_input.size() / 0.4), 0.4, std::equal_to<uint64_t>{}, MurMur64Hash{});
+			for (auto outerIt = smaller_input.begin(); outerIt != smaller_input.end(); ++outerIt)
+			{
+				auto key = outerIt->first;
+				if (done.check(key))
+					continue;
+				else
+					done.insert_fast(key);
+				if (auto it = bigger_input.find(key); it != bigger_input.local_end())
+				{
+					auto smaller_it = smaller_input.find(key); //in case of non unique values local_begin may produce erroneous results
+
+					smaller_output.emplace_back(key, std::vector<uint32_t>{});
+					for (size_t i = 0; smaller_it != smaller_input.local_end(); ++smaller_it, ++i) {
+						assert(i <= insert_up_to - 1);
+						if (i == insert_up_to - 1)
+							for (auto x : vec_for_highly_duplicated_elems_smaller[smaller_it->second])
+								smaller_output.back().second.push_back(static_cast<uint32_t>(x));
+						else
+							smaller_output.back().second.push_back(static_cast<uint32_t>(smaller_it->second));
+					}
+
+					bigger_output.emplace_back(key, std::vector<uint32_t>{});
+					for (size_t i = 0; it != bigger_input.local_end(); ++it, ++i) {
+						assert(i <= insert_up_to - 1);
+						if (i == insert_up_to - 1)
+							for (auto x : vec_for_highly_duplicated_elems_bigger[it->second])
+								bigger_output.back().second.push_back(static_cast<uint32_t>(x));
+						else
+							bigger_output.back().second.push_back(static_cast<uint32_t>(it->second));
+					}
+				}
+			}
+		}
+	}
+};
 
 class CKmersHashSetLP
 {

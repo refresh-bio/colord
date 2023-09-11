@@ -796,6 +796,63 @@ template<typename Key_t, typename Value_t,
 
 			return true;
 		}
+
+		//if there are < n - 1 elements of key already inserted, it works as normal
+		//if there are exactly n - 1 elements of key already inserted insert alt_val instead of val
+		//if there are exactly n elements of key already inserted set alt_val to a value of the last occurrence
+		//it is the caller responsibility to use the same n each call
+		//alt_val is in-out parameter
+		//n must be > 1
+		//returns the number of elements with this key after adding
+		//so that the caller may check if the value was added, if n is returned it means value was not added, and either
+		// - alt_val was added if there were n - 1 occurrences of key
+		// - or nothing is added and alt_val is set to a value of last occurrence
+		//warning: there will be no restruct, the caller must ensure HT has enough space from its construction point
+		size_t insert_up_to_n_duplicates(const Key_t& key, const Value_t& value, Value_t& alt_val, size_t n)
+		{
+			assert(!(no_elements >= size_when_restruct));
+
+			size_t h = hash(key) & allocated_mask;
+			size_t n_occ = 0;
+
+			size_t last_occ_pos = std::numeric_limits<size_t>::max();
+
+			if (!compare(data[h].first, empty_key))
+			{
+				if (compare(data[h].first, key)) {
+					++n_occ;
+					last_occ_pos = h;
+				}
+
+				do
+				{
+					h = (h + 1) & allocated_mask;
+					if (compare(data[h].first, key)) {
+						++n_occ;
+						last_occ_pos = h;
+					}
+				} while (data[h].first != empty_key);
+			}
+
+			if (!n_occ)
+				++no_elements_unique;
+			else if (n_occ == n - 1)
+			{
+				++no_elements;
+				data[h] = value_type(key, alt_val);
+				return n_occ + 1; // == n
+			}
+			else if (n_occ == n)
+			{
+				alt_val = data[last_occ_pos].second;
+				return n_occ; // == n
+			}
+
+			++no_elements;
+			data[h] = value_type(key, value);
+
+			return n_occ + 1;
+		}
 		
 		local_iterator find(const key_type& key)
 		{
