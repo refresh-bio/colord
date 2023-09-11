@@ -64,7 +64,9 @@ enum class AnalyseRefReadWithKmersRes { NoAnchors, CorespondingKmersIncompatibil
 class CMmersHashMapLP;
 class CKmersHashMapLP;
 class CKmersHashSetLP;
-using CMmers = CMmersHashMapLP;
+class CMmersHashMapDuplicateOptimizedLP;
+//using CMmers = CMmersHashMapLP;
+using CMmers = CMmersHashMapDuplicateOptimizedLP;
 using CKmers = CKmersHashMapLP;
 
 class CBloomFilter
