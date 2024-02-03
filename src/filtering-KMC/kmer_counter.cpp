@@ -577,7 +577,7 @@ int run_filtering_kmc(const CFilteringParams& params)
 
 	regOpt("-ci" + std::to_string(params.cutoffMin));
 
-	regOpt("-cs" + std::to_string(params.maxCount));
+	regOpt("-cx" + std::to_string(params.maxCount));
 
 	regOpt("-t" + std::to_string(params.nThreads));
 
