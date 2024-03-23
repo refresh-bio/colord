@@ -12,7 +12,7 @@ ifeq ($(UNAME_S),Darwin)
 
 else
 	CFLAGS = -Wall -O3 -std=c++17 -static -Wl,--whole-archive -lstdc++fs -lpthread -Wl,--no-whole-archive
-	CLINK = -Wall -O3 -std=c++17 -static -Wl,--whole-archive -lstdc++fs -lpthread -Wl,--no-whole-archive	
+	CLINK = -Wall -O3 -std=c++17 -static -Wl,--whole-archive -lstdc++fs -lpthread -Wl,--no-whole-archive
 
 	CFLAGS_KMC = -Wall -O3 -m64 -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=c++11
 	CLINK_KMC = -lm -static -O3 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=c++11
@@ -39,7 +39,7 @@ $(SRC)/arg_parse.o \
 $(SRC)/libs/edlib/edlib.o \
 $(SRC)/libs/kmc_api/kmc_file.o \
 $(SRC)/libs/kmc_api/kmer_api.o \
-$(SRC)/libs/kmc_api/mmer.o 
+$(SRC)/libs/kmc_api/mmer.o
 
 #objs for colord and colord_api
 OBJS_COMMON = \
@@ -128,7 +128,7 @@ $(KMC_MAIN_DIR)/splitter.o \
 $(KMC_MAIN_DIR)/kb_collector.o
 
 ifeq ($(UNAME_S),Darwin)
-	RADULS_OBJS = 
+	RADULS_OBJS =
 else
 	RADULS_OBJS = \
 	$(KMC_MAIN_DIR)/raduls_sse2.o \
@@ -152,7 +152,7 @@ $(KMC_MAIN_DIR)/raduls_avx.o: $(KMC_MAIN_DIR)/raduls_avx.cpp
 	$(CXX) $(CFLAGS_KMC) -mavx -c $< -o $@
 $(KMC_MAIN_DIR)/raduls_avx2.o: $(KMC_MAIN_DIR)/raduls_avx2.cpp
 	$(CXX) $(CFLAGS_KMC) -mavx2 -c $< -o $@
-	
+
 
 
 $(LIB_FILTERING_KMC): $(KMC_OBJS) $(RADULS_OBJS)
@@ -168,7 +168,9 @@ clean:
 	-rm -f $(SRC)/../api_example/*.o
 	-rm -f $(KMC_MAIN_DIR)/*.o
 	-rm -f $(LIB_FILTERING_KMC)
-	-rm -rf bin	
+	-rm -f $(SRC)/../API/colord_api.o $(SRC)/../API_example/api_example.o
+	-rm -f $(COBJS)
+	-rm -rf bin
 	-rm -rf include
 
 
