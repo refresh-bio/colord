@@ -4,14 +4,14 @@ SRC = src/colord
 
 ifeq ($(UNAME_S),Darwin)
 	CXX = /usr/local/bin/g++-10
-	CFLAGS = -Wall -O3 -std=c++17 -static-libgcc -static-libstdc++ -pthread
+	CFLAGS = -Wall -O3 -std=c++17 -MP -MMD -static-libgcc -static-libstdc++ -pthread
 	CLINK = -Wall -O3 -std=c++17 -static-libgcc -static-libstdc++ -lpthread
 
 	CFLAGS_KMC = -Wall -O3 -m64 -static-libgcc -static-libstdc++ -fopenmp -pthread -std=c++11
 	CLINK_KMC = -lm -fopenmp -static-libgcc -static-libstdc++ -O3 -pthread -std=c++11
 
 else
-	CFLAGS = -Wall -O3 -std=c++17 -static -Wl,--whole-archive -lstdc++fs -lpthread -Wl,--no-whole-archive
+	CFLAGS = -Wall -O3 -std=c++17 -MP -MMD -static -Wl,--whole-archive -lstdc++fs -lpthread -Wl,--no-whole-archive
 	CLINK = -Wall -O3 -std=c++17 -static -Wl,--whole-archive -lstdc++fs -lpthread -Wl,--no-whole-archive
 
 	CFLAGS_KMC = -Wall -O3 -m64 -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=c++11
@@ -39,7 +39,7 @@ $(SRC)/arg_parse.o \
 $(SRC)/libs/edlib/edlib.o \
 $(SRC)/libs/kmc_api/kmc_file.o \
 $(SRC)/libs/kmc_api/kmer_api.o \
-$(SRC)/libs/kmc_api/mmer.o
+$(SRC)/libs/kmc_api/mmer.o 
 
 #objs for colord and colord_api
 OBJS_COMMON = \
@@ -104,6 +104,12 @@ $(SRC)/../API_example/api_example.o: $(SRC)/../API_example/api_example.cpp
 $(SRC)/../API/colord_api.o: $(SRC)/../API/colord_api.cpp
 	$(CXX) $(CFLAGS) -I $(SRC)/../colord -c $< -o $@
 
+# ====================================================================
+# automatically generated dependency files for CoLoRd and KMC objects
+OBJS_TO_GEN_DEPS = $(OBJS) $(OBJS_COMMON) $(COBJS) $(SRC)/../API_example/api_example.o $(SRC)/../API/colord_api.o
+DEPENDENCY_FILES = $(subst .o,.d,$(OBJS_TO_GEN_DEPS))
+-include $(DEPENDENCY_FILES)
+
 $(BIN_DIR)/api_example: $(SRC)/../API_example/api_example.o $(BIN_DIR)/libcolord_api.a
 	-mkdir -p $(BIN_DIR)
 	$(CXX) $(CLINK) -o $@ $^ $(LIB_ZLIB)
@@ -128,7 +134,7 @@ $(KMC_MAIN_DIR)/splitter.o \
 $(KMC_MAIN_DIR)/kb_collector.o
 
 ifeq ($(UNAME_S),Darwin)
-	RADULS_OBJS =
+	RADULS_OBJS = 
 else
 	RADULS_OBJS = \
 	$(KMC_MAIN_DIR)/raduls_sse2.o \
@@ -152,7 +158,7 @@ $(KMC_MAIN_DIR)/raduls_avx.o: $(KMC_MAIN_DIR)/raduls_avx.cpp
 	$(CXX) $(CFLAGS_KMC) -mavx -c $< -o $@
 $(KMC_MAIN_DIR)/raduls_avx2.o: $(KMC_MAIN_DIR)/raduls_avx2.cpp
 	$(CXX) $(CFLAGS_KMC) -mavx2 -c $< -o $@
-
+	
 
 
 $(LIB_FILTERING_KMC): $(KMC_OBJS) $(RADULS_OBJS)
@@ -170,6 +176,7 @@ clean:
 	-rm -f $(LIB_FILTERING_KMC)
 	-rm -f $(SRC)/../API/colord_api.o $(SRC)/../API_example/api_example.o
 	-rm -f $(COBJS)
+	-rm -f $(DEPENDENCY_FILES)
 	-rm -rf bin
 	-rm -rf include
 
