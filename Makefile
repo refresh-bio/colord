@@ -4,15 +4,15 @@ SRC = src/colord
 
 ifeq ($(UNAME_S),Darwin)
 	CXX = /usr/local/bin/g++-10
-	CFLAGS = -Wall -O3 -std=c++17 -static-libgcc -static-libstdc++ -pthread
+	CFLAGS = -Wall -O3 -std=c++17 -MP -MMD -static-libgcc -static-libstdc++ -pthread
 	CLINK = -Wall -O3 -std=c++17 -static-libgcc -static-libstdc++ -lpthread
 
 	CFLAGS_KMC = -Wall -O3 -m64 -static-libgcc -static-libstdc++ -fopenmp -pthread -std=c++11
 	CLINK_KMC = -lm -fopenmp -static-libgcc -static-libstdc++ -O3 -pthread -std=c++11
 
 else
-	CFLAGS = -Wall -O3 -std=c++17 -static -Wl,--whole-archive -lstdc++fs -lpthread -Wl,--no-whole-archive
-	CLINK = -Wall -O3 -std=c++17 -static -Wl,--whole-archive -lstdc++fs -lpthread -Wl,--no-whole-archive	
+	CFLAGS = -Wall -O3 -std=c++17 -MP -MMD -static -Wl,--whole-archive -lstdc++fs -lpthread -Wl,--no-whole-archive
+	CLINK = -Wall -O3 -std=c++17 -static -Wl,--whole-archive -lstdc++fs -lpthread -Wl,--no-whole-archive
 
 	CFLAGS_KMC = -Wall -O3 -m64 -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=c++11
 	CLINK_KMC = -lm -static -O3 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=c++11
@@ -104,6 +104,12 @@ $(SRC)/../API_example/api_example.o: $(SRC)/../API_example/api_example.cpp
 $(SRC)/../API/colord_api.o: $(SRC)/../API/colord_api.cpp
 	$(CXX) $(CFLAGS) -I $(SRC)/../colord -c $< -o $@
 
+# ====================================================================
+# automatically generated dependency files for CoLoRd and KMC objects
+OBJS_TO_GEN_DEPS = $(OBJS) $(OBJS_COMMON) $(COBJS) $(SRC)/../API_example/api_example.o $(SRC)/../API/colord_api.o
+DEPENDENCY_FILES = $(subst .o,.d,$(OBJS_TO_GEN_DEPS))
+-include $(DEPENDENCY_FILES)
+
 $(BIN_DIR)/api_example: $(SRC)/../API_example/api_example.o $(BIN_DIR)/libcolord_api.a
 	-mkdir -p $(BIN_DIR)
 	$(CXX) $(CLINK) -o $@ $^ $(LIB_ZLIB)
@@ -168,7 +174,10 @@ clean:
 	-rm -f $(SRC)/../api_example/*.o
 	-rm -f $(KMC_MAIN_DIR)/*.o
 	-rm -f $(LIB_FILTERING_KMC)
-	-rm -rf bin	
+	-rm -f $(SRC)/../API/colord_api.o $(SRC)/../API_example/api_example.o
+	-rm -f $(COBJS)
+	-rm -f $(DEPENDENCY_FILES)
+	-rm -rf bin
 	-rm -rf include
 
 
